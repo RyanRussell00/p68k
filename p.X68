@@ -11,6 +11,8 @@ START:                  ; first instruction of program
     nop
     nop
     nop
+    
+    INCLUDE "bin.h"
 * end of code to translate
 
 * Loading address
@@ -29,7 +31,7 @@ detect_nop:
     beq     print_nop
     bne     print_not_nop
 cont_detect_nop:
-    cmpi.w  #$1010, (a2)
+    cmpi.l  #$00001010, (a2)
     bpl.s   detect_nop
     
     rts
@@ -59,6 +61,7 @@ isNop       dc.b    'Operation is nop',0
 notNop      dc.b    'Operation is not nop',0
 
     END    START        ; last line of source
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

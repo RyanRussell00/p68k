@@ -1,0 +1,88 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 4/11/2020 4:22:35 AM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00001000                             7      ORG    $1000
+00001000                             8  START:                  ; first instruction of program
+00001000                             9  
+00001000                            10  * code to translate
+00001000  4E71                      11      nop
+00001002  4E71                      12      nop
+00001004  4E71                      13      nop
+00001006                            14      
+00001006                            15      INCLUDE "bin.h"
+00001006  4E71                      16      nop
+00001008  4E71                      17      nop
+0000100A  4E71                      18      nop
+0000100C  0600 0020                 19      add.b   #$20, d0
+00001010  4E71                      20      nop
+00001010  4E71                      21  -------------------- end include --------------------
+00001012                            22  * end of code to translate
+00001012                            23  
+00001012                            24  * Loading address
+00001012  247C 00001000             25      movea.l #$00001000, a2
+00001018  4EB9 00001022             26      jsr     detect_nop
+0000101E                            27  
+0000101E  FFFF FFFF                 28      SIMHALT             ; halt simulator
+00001022                            29  
+00001022                            30  *
+00001022                            31  * S1
+00001022                            32  * parameters a2 is the start address
+00001022                            33  * TODO add an end address that is specified by the user
+00001022                            34  * return void
+00001022                            35  detect_nop:
+00001022  0C5A 4E71                 36      cmpi.w  #$4E71, (a2)+
+00001026  6700 0010                 37      beq     print_nop
+0000102A  6600 001C                 38      bne     print_not_nop
+0000102E                            39  cont_detect_nop:
+0000102E  0C92 00001010             40      cmpi.l  #$00001010, (a2)
+00001034  6AEC                      41      bpl.s   detect_nop
+00001036                            42      
+00001036  4E75                      43      rts
+00001038                            44  
+00001038                            45  *
+00001038                            46  * S2
+00001038                            47  * parameters none
+00001038                            48  * return void   
+00001038                            49  print_nop:
+00001038  43F9 00001058             50      lea     isNop, a1
+0000103E  103C 000D                 51      move.b  #13, d0
+00001042  4E4F                      52      trap    #15
+00001044  4EF8 102E                 53      jmp     cont_detect_nop
+00001048                            54  
+00001048                            55  *
+00001048                            56  * S2
+00001048                            57  * parameters none
+00001048                            58  * return void   
+00001048                            59  print_not_nop:
+00001048  43F9 00001069             60      lea     notNop, a1
+0000104E  103C 000D                 61      move.b  #13, d0
+00001052  4E4F                      62      trap    #15
+00001054  4EF8 102E                 63      jmp     cont_detect_nop
+00001058                            64  
+00001058                            65  * Put variables and constants here
+00001058= 4F 70 65 72 61 74 ...     66  isNop       dc.b    'Operation is nop',0
+00001069= 4F 70 65 72 61 74 ...     67  notNop      dc.b    'Operation is not nop',0
+0000107E                            68  
+0000107E                            69      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CONT_DETECT_NOP     102E
+DETECT_NOP          1022
+ISNOP               1058
+NOTNOP              1069
+PRINT_NOP           1038
+PRINT_NOT_NOP       1048
+START               1000
