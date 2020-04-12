@@ -29,6 +29,7 @@
 
 
 * ==== constants and variables =====
+        movea.l #$00100000, sp
 
 input_pt1       DC.W    'Please enter an even ',0
 input_pt2       DC.W    ' address between (',0

@@ -7,11 +7,15 @@
 *
 * S1
 * parameters para1 start d1
-* para2 start/end word
+* para2 start/end word a2
 * return void
 print_user_input_msg:
     move.l  #0, A1
     lea     input_pt1, A1
+    move.b  #14, D0
+    trap    #15
+    
+    move.l  A2, A1
     move.b  #14, D0
     trap    #15
     
@@ -21,7 +25,7 @@ print_user_input_msg:
     
     moveq   #15, D0
     moveq   #16, D2
-    move.l  #test_start, D1
+    *move.l  #test_start, D1 ; passed in as an argument
     trap    #15
     
     lea     input_pt3, A1
@@ -30,7 +34,7 @@ print_user_input_msg:
     
     moveq   #15, D0
     moveq   #16, D2
-    move.l  #test_end, D1
+    move.l  #test_end, D1 ; always remains the same
     trap    #15
 
     lea     input_pt4, A1
@@ -46,60 +50,85 @@ print_user_input_msg:
 * calls a subroutine that converts it to hex
 * returns start and end in d0, d1
 get_user_input:
-    
-*    move.b  #4, D0 ; fix this
-*    trap    #15
-*    * print back what the user entered
-*    moveq   #15, D0
-*    moveq   #16, D2
-*    trap    #15
-    ; reads a string number from the user
-    ;clr.l   (A1)
-    ;move.b  #2, d0
-    ;trap    #15
-    ; echoes back the string number
-   ; move.b  #13, d0
-   ; trap    #15
-    
     ; provide start or end
     ; start address
-    jsr print_user_input_msg
+    move.l  #test_start, D1
+    lea     input_s, A2
+    jsr     print_user_input_msg
 input_loop1:
-    jsr get_str_input
+    jsr     get_str_input
     
     move.l  #test_start, D5
-    jsr validate_and_tolower_input
+    jsr     validate_and_tolower_input
     
     jsr str_to_hex
+    move.l  d0, d7
     
     ; check if within bounds
-    ; if not within bounds
+    ; if not within bounds and even
     ; send error message and get user input
+test_even:
+    andi.b  #1, d0
+    cmpi.b  #1, d0 ; check if it is odd
+    beq     bad_value
+    
+test_bounds:
+    move.l  d7, d0
+    cmpi.l  #test_start, d0
+    bmi     bad_value
+    cmpi.l  #test_end, d0
+    ble     input_loop2_setup
+
+bad_value:
+    move.l  #test_start, D5
+    jsr inpt_err_msg
     
     bra.s   input_loop1
     
+input_loop2_setup:
     ; provide start or end
     ; new start address
-    jsr print_user_input_msg
+    move.l  d7, d1
+    move.l  d7, -(sp)
+    lea     input_e, A2
+    jsr     print_user_input_msg
 input_loop2:
-    jsr get_str_input
-    move.l  #test_start, D5 ; will be the value given by the user later
-    jsr validate_and_tolower_input
+    jsr     get_str_input
+    move.l  d7, D5 ; will be the value given by the user later
+    jsr     validate_and_tolower_input
 
-    jsr str_to_hex
-    
+    jsr     str_to_hex
+    move.l  d0, d7
     ; check if within bounds
     ; if not within bounds
     ; send error message and get user input
     
-    bra.s   input_loop2
+test_even2:
+    andi.b  #1, d0
+    cmpi.b  #1, d0 ; check if it is odd
+    beq     bad_value2
     
+test_bounds2:
+    move.l  d7, d0
+    move.l  (sp)+, d5
+    cmp.l   d5, d0 ; has to be the start from input1
+    bmi     bad_value2
+    cmpi.l  #test_end, d0
+    ble     user_input_end
+
+bad_value2:
+   * move.l  #test_start, D5 ; D5 it is already preloaded
+    jsr     inpt_err_msg
+    bra.s   input_loop2
+
+user_input_end:
     ; display the converted string in hex
   ;  move.l  d0, d1
   ;  moveq   #15, d0
   ;  moveq   #16, d2
   ;  trap    #15
-    
+    move.l  d5, d0
+    move.l  d7, d1
     rts
 
 * validates and lowers the characters from the input
@@ -143,8 +172,8 @@ to_lower_case:
     move.b  d1, (a3)
 continue_uinput_loop:
     ; print the updated char
-    move.b  #6, d0
-    trap    #15
+   * move.b  #6, d0
+   * trap    #15
     ; decrement count
     subi.b  #1, d3
     ; check to see if 0
