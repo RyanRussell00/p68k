@@ -26,7 +26,7 @@ op_notfound     MOVEM.L reglist_notf, -(SP) * save current regs to stack
 op_notfound_x   ADDQ    #$2, A0 * move to next opcode word
                 MOVEM.L (SP)+, reglist_notf * bring back old registers
                 RTS * exit subroutine
-*-----------------------------------------------------------*-----------------------------------------------------------
+*-----------------------------------------------------------
 * //// opcode NOP
 * parameters:
 *   A0 - address of opcode's first word
@@ -53,13 +53,6 @@ op_nop_x        ADDQ    #$2, A0
 
 msg_data        DC.B    'DATA',0
 msg_nop         DC.B  'NOP',0
-
-
-
-*~Font name~Courier New~
-*~Font size~10~
-*~Tab type~1~
-*~Tab size~4~
 
 *~Font name~Courier New~
 *~Font size~10~

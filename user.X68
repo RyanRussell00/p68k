@@ -311,7 +311,3 @@ inpt_err_msg:
     move.l  #0, A1
     
     rts
-*~Font name~Courier New~
-*~Font size~12~
-*~Tab type~1~
-*~Tab size~4~

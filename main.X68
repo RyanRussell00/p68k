@@ -5,11 +5,11 @@
 * Description: This is a disassembler written for CSS 422 B.
 *-----------------------------------------------------------
 org_main    EQU     $1000
-org_stack   EQU     $5000
+org_stack   EQU     #000100000
 org_test    EQU     $A000 * remove before final submission
             ORG     org_main
 START:
-        MOVEA.L #000100000, SP * initialize stack
+        MOVEA.L org_stack, SP * initialize stack
 
 * ==== program code ====
 
@@ -65,6 +65,7 @@ indent          DC.W    HT,HT,0
         INCLUDE     "test.X68"
 * ==== end ====
         END         START
+
 
 *~Font name~Courier New~
 *~Font size~10~
