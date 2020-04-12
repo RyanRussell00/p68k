@@ -2,13 +2,16 @@
 * Testing file.
 *
 
-test_org    EQU     $00009000
-            ORG     test_org
+org_test    EQU     $00009000
+
+            ORG     org_test
 
 * testing codes
 test_start  NOP
             NOP
 test_end    NOP
+
+
 
 *~Font name~Courier New~
 *~Font size~10~

@@ -4,8 +4,12 @@
 * Date       : April 10th, 2020
 * Description: This is a disassembler written for CSS 422 B.
 *-----------------------------------------------------------
-        ORG     $1000
-        START:
+org_main    EQU     $1000
+org_stack   EQU     $5000
+org_test    EQU     $A000 * remove before final submission
+            ORG     org_main
+START:
+            MOVEA.L org_stack, SP * initialize stack
 
 * ==== program code ====
 
@@ -17,7 +21,12 @@
         MOVE.L  #test_end, A3
         JSR     detect_nop
 
-        SIMHALT             * halt simulator
+* put program code here
+
+        NOP                 * nothing so far
+
+        SIMHALT             * code is done
+        
 
 * ==== subroutines ====
 * all opcode-handling subroutines belong in a seperate file
@@ -29,7 +38,6 @@
 
 
 * ==== constants and variables =====
-        movea.l #$00100000, sp
 
 input_pt1       DC.W    'Please enter an even ',0
 input_pt2       DC.W    ' address between (',0
@@ -45,10 +53,15 @@ input_inc_pt5   DC.W    '):',0
 input_s         DC.W    'start',0
 input_e         DC.W    'end',0
 
-* ==== tests ====
+newline         DC.B    CR,LF,0
+indent          DC.B    HT,HT,0
 
+* ==== tests ====
         INCLUDE     "test.X68"
+* ==== end ====
         END         START
+
+
 
 
 
