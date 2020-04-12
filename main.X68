@@ -9,7 +9,7 @@ org_stack   EQU     $5000
 org_test    EQU     $A000 * remove before final submission
             ORG     org_main
 START:
-            MOVEA.L org_stack, SP * initialize stack
+        MOVEA.L #000100000, SP * initialize stack
 
 * ==== program code ====
 
@@ -17,9 +17,9 @@ START:
         JSR     get_user_input
 
 * Loading address
-        MOVE.L  #test_start, A2
-        MOVE.L  #test_end, A3
-        JSR     detect_nop
+       * MOVE.L  #test_start, A2
+       * MOVE.L  #test_end, A3
+       * JSR     reglist_nop
 
 * put program code here
 
@@ -30,7 +30,7 @@ START:
 
 * ==== subroutines ====
 * all opcode-handling subroutines belong in a seperate file
-        INCLUDE "sub.X68"
+      *  INCLUDE "sub.X68"
 * all user input subroutines belong in a separate file
         INCLUDE "user.X68"
 
@@ -53,18 +53,13 @@ input_inc_pt5   DC.W    '):',0
 input_s         DC.W    'start',0
 input_e         DC.W    'end',0
 
-newline         DC.B    CR,LF,0
-indent          DC.B    HT,HT,0
+*newline         DC.B    CR,LF,0
+*indent          DC.B    HT,HT,0
 
 * ==== tests ====
         INCLUDE     "test.X68"
 * ==== end ====
         END         START
-
-
-
-
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

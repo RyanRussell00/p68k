@@ -2,14 +2,16 @@
 * Testing file.
 *
 
-org_test    EQU     $00009000
+test_org    EQU     $00009000
 
-            ORG     org_test
+            ORG     test_org
 
 * testing codes
 test_start  NOP
             NOP
 test_end    NOP
+
+
 
 
 
