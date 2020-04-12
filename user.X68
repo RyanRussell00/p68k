@@ -5,47 +5,6 @@
 * ==== user subroutines ====
 
 *
-* S1
-* parameters para1 start d1
-* para2 start/end word a2
-* return void
-print_user_input_msg:
-    move.l  #0, A1
-    lea     input_pt1, A1
-    move.b  #14, D0
-    trap    #15
-    
-    move.l  A2, A1
-    move.b  #14, D0
-    trap    #15
-    
-    lea     input_pt2, A1
-    move.b  #14, D0
-    trap    #15
-    
-    moveq   #15, D0
-    moveq   #16, D2
-    *move.l  #test_start, D1 ; passed in as an argument
-    trap    #15
-    
-    lea     input_pt3, A1
-    move.b  #14, D0
-    trap    #15
-    
-    moveq   #15, D0
-    moveq   #16, D2
-    move.l  #test_end, D1 ; always remains the same
-    trap    #15
-
-    lea     input_pt4, A1
-    move.b  #14, D0
-    trap    #15
-    
-    move.l  #0, A1
-    
-    rts
-
-*
 * takes user input as string and 
 * calls a subroutine that converts it to hex
 * returns start and end in d0, d1
@@ -65,8 +24,8 @@ input_loop1:
     move.l  d0, d7
     
     ; check if within bounds
-    ; if not within bounds and even
-    ; send error message and get user input
+    ; if not within bounds or not even
+    ; send error message and get user input again
 test_even:
     andi.b  #1, d0
     cmpi.b  #1, d0 ; check if it is odd
@@ -122,11 +81,6 @@ bad_value2:
     bra.s   input_loop2
 
 user_input_end:
-    ; display the converted string in hex
-  ;  move.l  d0, d1
-  ;  moveq   #15, d0
-  ;  moveq   #16, d2
-  ;  trap    #15
     move.l  d5, d0
     move.l  d7, d1
     rts
@@ -171,9 +125,6 @@ to_lower_case:
     add.b   #$20, d1
     move.b  d1, (a3)
 continue_uinput_loop:
-    ; print the updated char
-   * move.b  #6, d0
-   * trap    #15
     ; decrement count
     subi.b  #1, d3
     ; check to see if 0
@@ -278,6 +229,48 @@ get_str_input:
     move.b  #2, d0
     trap    #15
     rts
+
+*
+* S1
+* parameters para1 start d1
+* para2 start/end word a2
+* return void
+print_user_input_msg:
+    move.l  #0, A1
+    lea     input_pt1, A1
+    move.b  #14, D0
+    trap    #15
+    
+    move.l  A2, A1
+    move.b  #14, D0
+    trap    #15
+    
+    lea     input_pt2, A1
+    move.b  #14, D0
+    trap    #15
+    
+    moveq   #15, D0
+    moveq   #16, D2
+    *move.l  #test_start, D1 ; passed in as an argument
+    trap    #15
+    
+    lea     input_pt3, A1
+    move.b  #14, D0
+    trap    #15
+    
+    moveq   #15, D0
+    moveq   #16, D2
+    move.l  #test_end, D1 ; always remains the same
+    trap    #15
+
+    lea     input_pt4, A1
+    move.b  #14, D0
+    trap    #15
+    
+    move.l  #0, A1
+    
+    rts
+
 
 *
 * displays error msg for the input
