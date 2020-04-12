@@ -10,7 +10,6 @@
 * ==== program code ====
 
 * Take user input for start and end address
-        *JSR     print_user_input_msg
         JSR     get_user_input
 
 * Loading address

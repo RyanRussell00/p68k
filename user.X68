@@ -6,7 +6,8 @@
 
 *
 * S1
-* parameters para1
+* parameters para1 start d1
+* para2 start/end word
 * return void
 print_user_input_msg:
     move.l  #0, A1
@@ -43,7 +44,7 @@ print_user_input_msg:
 *
 * takes user input as string and 
 * calls a subroutine that converts it to hex
-*
+* returns start and end in d0, d1
 get_user_input:
     
 *    move.b  #4, D0 ; fix this
@@ -60,16 +61,39 @@ get_user_input:
    ; move.b  #13, d0
    ; trap    #15
     
+    ; provide start or end
+    ; start address
+    jsr print_user_input_msg
+input_loop1:
     jsr get_str_input
     
-   ; bsr.s validate_user_input
     move.l  #test_start, D5
     jsr validate_and_tolower_input
     
+    jsr str_to_hex
+    
+    ; check if within bounds
+    ; if not within bounds
+    ; send error message and get user input
+    
+    bra.s   input_loop1
+    
+    ; provide start or end
+    ; new start address
+    jsr print_user_input_msg
+input_loop2:
+    jsr get_str_input
     move.l  #test_start, D5 ; will be the value given by the user later
     jsr validate_and_tolower_input
 
     jsr str_to_hex
+    
+    ; check if within bounds
+    ; if not within bounds
+    ; send error message and get user input
+    
+    bra.s   input_loop2
+    
     ; display the converted string in hex
   ;  move.l  d0, d1
   ;  moveq   #15, d0
@@ -114,16 +138,13 @@ validation_uinput_loop:
     cmpi.b  #$67, d1
     bmi     continue_uinput_loop
     bra.w   incorrect_input
-    
 to_lower_case:
     add.b   #$20, d1
     move.b  d1, (a3)
-    
 continue_uinput_loop:
     ; print the updated char
     move.b  #6, d0
     trap    #15
-    
     ; decrement count
     subi.b  #1, d3
     ; check to see if 0
@@ -131,8 +152,6 @@ continue_uinput_loop:
     ; if not keep going
     bne     validation_uinput_loop
     bra.w   correct_input
-    
-    
 correct_input:
     ; check to see if the value in d1 is '1' 
     ; if so then the input is incorrect because it is
@@ -141,13 +160,11 @@ correct_input:
     beq     incorrect_input
     move.w  d4, d1 ; restore the value
     rts
-    
 incorrect_input:
     ; print error message and get user input
     jsr     inpt_err_msg
     jsr     get_str_input
     jmp     validate_and_tolower_input
-    jsr     str_to_hex
     
 * 
 * converts a string to hex number
@@ -158,25 +175,50 @@ incorrect_input:
 * 
 * Registers in use
 * d4 accumulator
-* 
+* d2 pow index
 *
 str_to_hex:
     clr.l   d4  
-    add.l   d1, a1 ; move the address to the back  
+    clr.l   d2 ; pow
+    clr.l   d3 ; extracted char
+    
+    move.l  d1, d2
+    subi.l  #1, d2
+   * add.l   d1, a1 ; move the address to the back  
+    
 convert_loop:
-    cmpi.b  #0, d1
+    cmpi.b  #$F, d2
     beq     end_to_hex
     
+    move.b  (a1)+, d3
     
+    cmpi.b  #$40, d3 ; if this is + we are looking at a letter
+    bpl     hex_handler
     
+    subi.l  #$30, d3
+    move.l  #16, d5 ; load base
+    move.l  d2, d6 ; load power
+    jsr pow
+    mulu.w  d7, d3 ; multiply num*16^pow
+    add.l   d3, d4 ; add to accumulator
+    clr.l   d3
+    subi.b  #1, d2 ; dec power
+
     bra.s   convert_loop
 
 hex_handler:
-
+    subi.l  #$57, d3
+    move.l  #16, d5 ; load base
+    move.l  d2, d6 ; load power
+    jsr pow
+    mulu.w  d3, d7 ; multiply num*16^pow
+    add.l   d7, d4 ; add to accumulator
+    
+    subi.b  #1, d2 ; dec power
     bra.s   convert_loop
 end_to_hex:
+    move.l  d4, d0
     rts
-
 
 
 * pow: power
@@ -193,6 +235,7 @@ pow_loop:
     cmpi.b  #1, d6
     beq     end_pow
     mulu.w  d5, d7
+    subi.l  #1, d6
     bra.s   pow_loop
 
 end_pow:
