@@ -1,9 +1,7 @@
 * 
 * Testing file.
 *
-
-test_org    EQU     $9000
-            ORG     test_org
+            ORG     org_test
 
 * testing codes
 test_start  NOP

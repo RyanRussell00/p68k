@@ -4,45 +4,60 @@
 
 * ==== opcode subroutines ====
 
+*-----------------------------------------------------------
+* //// opcode not found
+* parameters:
+*   A0 - address of opcode's first word
+* return:
+*   A0 - address of next opcode word
 *
-* S1
-* parameters a2 is the start address
-* TODO add an end address that is specified by the user
-* return void
-detect_nop:
-    CMPI.W  #$4E71, (A2)+
-    BEQ     print_nop
-    BNE     print_not_nop
-cont_detect_nop:
-    CMPI.L  #$00001010, (A2)
-    BPL.S   detect_nop
-    
-    RTS
+reglist_notf    REG     A1-A7/D0-D7 * every reg except parameters/return
+op_notfound     MOVEM.L reglist_notf, -(SP) * save current regs to stack
+* ---- handle the opcode:
+                
+                MOVE.B  #14, D0
+                LEA     msg_data, A1
+                TRAP    #15
+                LEA     newline, A1 * yes, trap 15 mode 13 allows newline
+                * but there will be more than just msg_data in the future
+                TRAP    #15
+                
+* ---- exit
+op_notfound_x   ADDQ    #$2, A0 * move to next opcode word
+                MOVEM.L (SP)+, reglist_notf * bring back old registers
+                RTS * exit subroutine
+*-----------------------------------------------------------
 
+
+*-----------------------------------------------------------
+* //// opcode NOP
+* parameters:
+*   A0 - address of opcode's first word
+* return:
+*   A0 - address of next opcode word
 *
-* S2
-* parameters none
-* return void   
-print_nop:
-    lea     isNop, A1
-    move.b  #13, D0
-    trap    #15
-    jmp     cont_detect_nop
+reglist_nop     REG     A1-A7/D0-D7
+op_nop          MOVEM.L reglist_nop, -(SP)
+* ---- handle the opcode:
+                
+                MOVE.B  #14, D0
+                LEA     msg_nop, A1
+                TRAP    #15
+                LEA     newline, A1
+                TRAP    #15
 
-*
-* S2
-* parameters none
-* return void   
-print_not_nop:
-    LEA     notNop, A1
-    MOVE.B  #13, D0
-    TRAP    #15
-    JMP     cont_detect_nop
+* ---- exit
+op_nop_x        ADDQ    #$2, A0
+                MOVEM.L (SP)+, reglist_nop
+                RTS
+*-----------------------------------------------------------
 
-* === constants and variables ====
+* ==== constants and variables ====
 
-isNop       DC.B    'Operation is nop',0
-notNop      DC.B    'Operation is not nop',0
+msg_data        DC.B    'DATA',0
+msg_nop         DC.B  'NOP',0
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
