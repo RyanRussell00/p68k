@@ -6,7 +6,7 @@
 
 *
 * S1
-* parameters a2 is the start address
+* parameters a2 is the start address, a3 is the end address
 * TODO add an end address that is specified by the user
 * return void
 detect_nop:
@@ -14,7 +14,7 @@ detect_nop:
     BEQ     print_nop
     BNE     print_not_nop
 cont_detect_nop:
-    CMPI.L  #$00001010, (A2)
+    CMPA.L  A2, A3
     BPL.S   detect_nop
     
     RTS
@@ -43,6 +43,8 @@ print_not_nop:
 
 isNop       DC.B    'Operation is nop',0
 notNop      DC.B    'Operation is not nop',0
+
+
 
 *~Font name~Courier New~
 *~Font size~10~

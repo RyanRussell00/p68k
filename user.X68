@@ -1,0 +1,252 @@
+* 
+* Subroutines to handle user input.
+*
+
+* ==== user subroutines ====
+
+*
+* S1
+* parameters para1
+* return void
+print_user_input_msg:
+    move.l  #0, A1
+    lea     input_pt1, A1
+    move.b  #14, D0
+    trap    #15
+    
+    lea     input_pt2, A1
+    move.b  #14, D0
+    trap    #15
+    
+    moveq   #15, D0
+    moveq   #16, D2
+    move.l  #test_start, D1
+    trap    #15
+    
+    lea     input_pt3, A1
+    move.b  #14, D0
+    trap    #15
+    
+    moveq   #15, D0
+    moveq   #16, D2
+    move.l  #test_end, D1
+    trap    #15
+
+    lea     input_pt4, A1
+    move.b  #14, D0
+    trap    #15
+    
+    move.l  #0, A1
+    
+    rts
+
+*
+* takes user input as string and 
+* calls a subroutine that converts it to hex
+*
+get_user_input:
+    
+*    move.b  #4, D0 ; fix this
+*    trap    #15
+*    * print back what the user entered
+*    moveq   #15, D0
+*    moveq   #16, D2
+*    trap    #15
+    ; reads a string number from the user
+    ;clr.l   (A1)
+    ;move.b  #2, d0
+    ;trap    #15
+    ; echoes back the string number
+   ; move.b  #13, d0
+   ; trap    #15
+    
+    jsr get_str_input
+    
+   ; bsr.s validate_user_input
+    move.l  #test_start, D5
+    jsr validate_and_tolower_input
+    
+    move.l  #test_start, D5 ; will be the value given by the user later
+    jsr validate_and_tolower_input
+
+    jsr str_to_hex
+    ; display the converted string in hex
+  ;  move.l  d0, d1
+  ;  moveq   #15, d0
+  ;  moveq   #16, d2
+  ;  trap    #15
+    
+    rts
+
+* validates and lowers the characters from the input
+* params:
+* param1 a1 address of string
+* param2 d1.w length
+* param3 d5 starting address
+* end will always be the same
+validate_and_tolower_input:
+    move.w  d1, d3
+    move.w  d1, d4 ; for safekeeping to be implemented with $sp soon
+    move.l  a1, a2
+    
+validation_uinput_loop:
+    move.l  a2, a3  ; store address in case we want to lower the char
+    move.b  (a2)+, d1
+    
+    ; if d1 is numeric keep it
+    ; if d1 is lowercase alpha keep it
+    ; if d1 is uppercase alpha change it to lowercase
+    ; also only check the ranges 0-9, a-f, and A-F
+    
+    ; check if numeric
+    cmpi.b  #$30, d1
+    bmi     incorrect_input
+    cmpi.b  #$40, d1
+    bmi     continue_uinput_loop
+    ; else check if capital letter
+    cmpi.b  #$41, d1
+    bmi     incorrect_input
+    cmpi.b  #$47, d1
+    bmi     to_lower_case
+    ; else check if lowercase letter
+    cmpi.b  #$61, d1
+    bmi     incorrect_input
+    cmpi.b  #$67, d1
+    bmi     continue_uinput_loop
+    bra.w   incorrect_input
+    
+to_lower_case:
+    add.b   #$20, d1
+    move.b  d1, (a3)
+    
+continue_uinput_loop:
+    ; print the updated char
+    move.b  #6, d0
+    trap    #15
+    
+    ; decrement count
+    subi.b  #1, d3
+    ; check to see if 0
+    cmpi.w  #0, d3
+    ; if not keep going
+    bne     validation_uinput_loop
+    bra.w   correct_input
+    
+    
+correct_input:
+    ; check to see if the value in d1 is '1' 
+    ; if so then the input is incorrect because it is
+    ; on an odd boundary
+    cmpi.b  #$31, d1
+    beq     incorrect_input
+    move.w  d4, d1 ; restore the value
+    rts
+    
+incorrect_input:
+    ; print error message and get user input
+    jsr     inpt_err_msg
+    jsr     get_str_input
+    jmp     validate_and_tolower_input
+    jsr     str_to_hex
+    
+* 
+* converts a string to hex number
+* if conversion fails notifies the caller
+* param a1 - address of string
+* param d1.w - length of string
+* returns number in d0
+* 
+* Registers in use
+* d4 accumulator
+* 
+*
+str_to_hex:
+    clr.l   d4  
+    add.l   d1, a1 ; move the address to the back  
+convert_loop:
+    cmpi.b  #0, d1
+    beq     end_to_hex
+    
+    
+    
+    bra.s   convert_loop
+
+hex_handler:
+
+    bra.s   convert_loop
+end_to_hex:
+    rts
+
+
+
+* pow: power
+* raise a num in d5 to a power of d6
+* returns result in d7
+pow:
+    move.l  d5, d7
+    cmpi.b  #0, d6
+    bne     pow_loop
+zero_pow:
+    move.l  #1, d7
+    bra.s   end_pow
+pow_loop:
+    cmpi.b  #1, d6
+    beq     end_pow
+    mulu.w  d5, d7
+    bra.s   pow_loop
+
+end_pow:
+    rts
+    
+* params void
+* gets user input
+* returns str address a1, str length d1.w
+get_str_input:
+    move.l  #0, A1
+    move.b  #2, d0
+    trap    #15
+    rts
+
+*
+* displays error msg for the input
+* params d5 - start
+* return void
+inpt_err_msg:
+    move.l  #0, A1
+    lea     input_inc_pt1, A1
+    move.b  #13, D0
+    trap    #15
+    
+    lea     input_inc_pt2, A1
+    move.b  #13, D0
+    trap    #15
+
+    lea     input_inc_pt3, A1
+    move.b  #14, D0
+    trap    #15
+    
+    moveq   #15, D0
+    moveq   #16, D2
+    move.l  D5, D1
+    trap    #15
+    
+    lea     input_inc_pt4, A1
+    move.b  #14, D0
+    trap    #15
+    
+    moveq   #15, D0
+    moveq   #16, D2
+    move.l  #test_end, D1
+    trap    #15
+   
+    lea     input_inc_pt5, A1
+    move.b  #13, D0
+    trap    #15
+    
+    move.l  #0, A1
+    
+    rts
+*~Font name~Courier New~
+*~Font size~12~
+*~Tab type~1~
+*~Tab size~4~
