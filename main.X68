@@ -19,7 +19,7 @@ START:
 * Loading address
         MOVE.L   d0, A2
         MOVE.L   d1, A3
-        JSR     reglist_nop
+        JSR      op_nop
 
 * put program code here
 
