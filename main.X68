@@ -17,9 +17,9 @@ START:
         JSR     get_user_input
 
 * Loading address
-       * MOVE.L  #test_start, A2
-       * MOVE.L  #test_end, A3
-       * JSR     reglist_nop
+        MOVE.L   d0, A2
+        MOVE.L   d1, A3
+        JSR     reglist_nop
 
 * put program code here
 
@@ -28,13 +28,14 @@ START:
         SIMHALT             * code is done
         
 
-* ==== subroutines ====
-* all opcode-handling subroutines belong in a seperate file
-      *  INCLUDE "sub.X68"
 * all user input subroutines belong in a separate file
         INCLUDE "user.X68"
 
         NOP                 * nothing so far
+        
+* ==== subroutines ====
+* all opcode-handling subroutines belong in a seperate file
+        INCLUDE "sub.X68"
 
 
 * ==== constants and variables =====
@@ -53,13 +54,18 @@ input_inc_pt5   DC.W    '):',0
 input_s         DC.W    'start',0
 input_e         DC.W    'end',0
 
-*newline         DC.B    CR,LF,0
-*indent          DC.B    HT,HT,0
+CR EQU $0D
+LF EQU $0A
+HT EQU $09
+
+newline         DC.W    CR,LF,0
+indent          DC.W    HT,HT,0
 
 * ==== tests ====
         INCLUDE     "test.X68"
 * ==== end ====
         END         START
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
