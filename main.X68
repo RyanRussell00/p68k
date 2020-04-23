@@ -8,7 +8,7 @@ org_main    equ     $1000
 org_stack   equ     $2000
             org     org_main
 start:
-        lea org_stack, sp * initialize stack
+        lea         org_stack, sp * initialize stack
 
 * ==== program code ====
         
@@ -18,7 +18,7 @@ start:
 * Loading address
         move.l   d0, a2
         move.l   d1, a3
-        jsr      op_nop
+        bsr      op_nop
 
 * put program code here
 
@@ -27,15 +27,11 @@ start:
         simhalt             * code is done
         
 
-* all user input subroutines belong in a separate file
+* ==== included files ====
         include "user.X68"
+        include "opcodes.X68"
 
         nop                 * nothing so far
-        
-* ==== subroutines ====
-* all opcode-handling subroutines belong in a seperate file
-        include "sub.X68"
-
 
 * ==== constants and variables =====
 
@@ -53,9 +49,9 @@ input_inc_pt5   dc.w    '):',0
 input_s         dc.w    'start',0
 input_e         dc.w    'end',0
 
-CR equ $0D
-LF equ $0A
-HT equ $09
+CR              equ $0d
+LF              equ $0a
+HT              equ $09
 
 newline         dc.w    CR,LF,0
 indent          dc.w    HT,HT,0

@@ -7,12 +7,13 @@
 *-----------------------------------------------------------
 * //// opcode not found
 * parameters:
-*   A0 - address of opcode's first word
+*   a0 - address of opcode's first word
 * return:
-*   A0 - address of next opcode word
+*   a0 - address of next opcode word
 *
-reglist_notf    reg     a1-a7/d0-d7 * every reg except parameters/return
-op_notfound     movem.l reglist_notf, -(sp) * save current regs to stack
+reglist_notf    reg     a1-a6/d0-d7 * every reg except parameters/return
+op_notfound     move.w  sr, -(sp)
+                movem.l reglist_notf, -(sp) * save current regs to stack
 * ---- handle the opcode:
                 
                 move.b  #14, d0
@@ -22,10 +23,12 @@ op_notfound     movem.l reglist_notf, -(sp) * save current regs to stack
                 * but there will be more than just msg_data in the future
                 trap    #15
                 
-* ---- exit
-op_notfound_x   addq    #$2, a0 * move to next opcode word
-                movem.l (sp)+, reglist_notf * bring back old registers
-                rts * exit subroutine
+                addq    #$2, a0 * move to next opcode word
+                
+* ---- exit        
+op_notfound_x   movem.l (sp)+, reglist_notf * bring back old registers
+                rtr * exit subroutine
+                
 *-----------------------------------------------------------
 * //// opcode NOP
 * parameters:
@@ -33,8 +36,9 @@ op_notfound_x   addq    #$2, a0 * move to next opcode word
 * return:
 *   a0 - address of next opcode word
 *
-reglist_nop     reg     a1-a7/d0-d7
-op_nop          movem.l reglist_nop, -(sp)
+reglist_nop     reg     a1-a6/d0-d7
+op_nop          move.w  sr, -(sp)
+                movem.l reglist_nop, -(sp)
 * ---- handle the opcode:
                 
                 move.b  #14, d0
@@ -42,17 +46,18 @@ op_nop          movem.l reglist_nop, -(sp)
                 trap    #15
                 lea     newline, a1
                 trap    #15
-
-* ---- exit
-op_nop_x        addq    #$2, a0
-                movem.l (sp)+, reglist_nop
-                rts
-*-----------------------------------------------------------
+                
+                addq    #$2, a0
+                
+* ---- exit                
+op_nop_x        movem.l (sp)+, reglist_nop
+                rtr
 
 * ==== constants and variables ====
 
 msg_data        dc.b    'DATA',0
-msg_nop         dc.b  'NOP',0
+msg_nop         dc.b    'NOP',0
+
 
 *~Font name~Courier New~
 *~Font size~10~
