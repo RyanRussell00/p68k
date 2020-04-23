@@ -11,13 +11,13 @@
 get_user_input:
     ; provide start or end
     ; start address
-    move.l  #test_start, D1
-    lea     input_s, A2
+    move.l  #test_start, d1
+    lea     input_s, a2
     jsr     print_user_input_msg
 input_loop1:
     jsr     get_str_input
     
-    move.l  #test_start, D5
+    move.l  #test_start, d5
     jsr     validate_and_tolower_input
     
     jsr str_to_hex
@@ -39,7 +39,7 @@ test_bounds:
     ble     input_loop2_setup
 
 bad_value:
-    move.l  #test_start, D5
+    move.l  #test_start, d5
     jsr inpt_err_msg
     
     bra.s   input_loop1
@@ -49,11 +49,11 @@ input_loop2_setup:
     ; new start address
     move.l  d7, d1
     move.l  d7, -(sp)
-    lea     input_e, A2
+    lea     input_e, a2
     jsr     print_user_input_msg
 input_loop2:
     jsr     get_str_input
-    move.l  d7, D5 ; will be the value given by the user later
+    move.l  d7, d5 ; will be the value given by the user later
     jsr     validate_and_tolower_input
 
     jsr     str_to_hex
@@ -167,7 +167,7 @@ str_to_hex:
    * add.l   d1, a1 ; move the address to the back  
     
 convert_loop:
-    cmpi.b  #$F, d2
+    cmpi.b  #$f, d2
     beq     end_to_hex
     
     move.b  (a1)+, d3
@@ -225,7 +225,7 @@ end_pow:
 * gets user input
 * returns str address a1, str length d1.w
 get_str_input:
-    move.l  #0, A1
+    move.l  #0, a1
     move.b  #2, d0
     trap    #15
     rts
@@ -236,38 +236,38 @@ get_str_input:
 * para2 start/end word a2
 * return void
 print_user_input_msg:
-    move.l  #0, A1
-    lea     input_pt1, A1
-    move.b  #14, D0
+    move.l  #0, a1
+    lea     input_pt1, a1
+    move.b  #14, d0
     trap    #15
     
-    move.l  A2, A1
-    move.b  #14, D0
+    move.l  a2, a1
+    move.b  #14, d0
     trap    #15
     
-    lea     input_pt2, A1
-    move.b  #14, D0
+    lea     input_pt2, a1
+    move.b  #14, d0
     trap    #15
     
-    moveq   #15, D0
-    moveq   #16, D2
-    *move.l  #test_start, D1 ; passed in as an argument
+    moveq   #15, d0
+    moveq   #16, d2
+    *move.l  #test_start, d1 ; passed in as an argument
     trap    #15
     
-    lea     input_pt3, A1
-    move.b  #14, D0
+    lea     input_pt3, a1
+    move.b  #14, d0
     trap    #15
     
-    moveq   #15, D0
-    moveq   #16, D2
-    move.l  #test_end, D1 ; always remains the same
+    moveq   #15, d0
+    moveq   #16, d2
+    move.l  #test_end, d1 ; always remains the same
     trap    #15
 
-    lea     input_pt4, A1
-    move.b  #14, D0
+    lea     input_pt4, a1
+    move.b  #14, d0
     trap    #15
     
-    move.l  #0, A1
+    move.l  #0, a1
     
     rts
 
@@ -277,37 +277,42 @@ print_user_input_msg:
 * params d5 - start
 * return void
 inpt_err_msg:
-    move.l  #0, A1
-    lea     input_inc_pt1, A1
-    move.b  #13, D0
+    move.l  #0, a1
+    lea     input_inc_pt1, a1
+    move.b  #13, d0
     trap    #15
     
-    lea     input_inc_pt2, A1
-    move.b  #13, D0
+    lea     input_inc_pt2, a1
+    move.b  #13, d0
     trap    #15
 
-    lea     input_inc_pt3, A1
-    move.b  #14, D0
+    lea     input_inc_pt3, a1
+    move.b  #14, d0
     trap    #15
     
-    moveq   #15, D0
-    moveq   #16, D2
-    move.l  D5, D1
+    moveq   #15, d0
+    moveq   #16, d2
+    move.l  d5, d1
     trap    #15
     
-    lea     input_inc_pt4, A1
-    move.b  #14, D0
+    lea     input_inc_pt4, a1
+    move.b  #14, d0
     trap    #15
     
-    moveq   #15, D0
-    moveq   #16, D2
-    move.l  #test_end, D1
+    moveq   #15, d0
+    moveq   #16, d2
+    move.l  #test_end, d1
     trap    #15
    
-    lea     input_inc_pt5, A1
-    move.b  #13, D0
+    lea     input_inc_pt5, a1
+    move.b  #13, d0
     trap    #15
     
-    move.l  #0, A1
+    move.l  #0, a1
     
     rts
+
+*~Font name~Courier New~
+*~Font size~10~
+*~Tab type~1~
+*~Tab size~4~
