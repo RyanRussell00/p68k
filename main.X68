@@ -16,19 +16,15 @@ start:
         jsr     get_user_input
 
 * Loading address
-        move.l   d0, a2
-        move.l   d1, a3
-        bsr      op_nop
-
-* put program code here
-
-        nop                 * nothing so far
+        move.l   d0, a0
+        bsr      read_opcode
 
         simhalt             * code is done
         
 
 * ==== included files ====
         include "user.X68"
+        include "detect.X68"
         include "opcodes.X68"
 
         nop                 * nothing so far
@@ -60,6 +56,7 @@ indent          dc.w    HT,HT,0
         include     "test.X68"
 * ==== end ====
         end         start
+
 
 
 

@@ -58,7 +58,6 @@ op_nop_x        movem.l (sp)+, reglist_nop
 msg_data        dc.b    'DATA',0
 msg_nop         dc.b    'NOP',0
 
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
