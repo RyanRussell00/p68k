@@ -16,11 +16,8 @@ op_notfound     move.w  sr, -(sp)
                 movem.l reglist_notf, -(sp) * save current regs to stack
 * ---- handle the opcode:
                 
-                move.b  #14, d0
+                move.b  #13, d0
                 lea     msg_data, a1
-                trap    #15
-                lea     newline, a1 * yes, trap 15 mode 13 allows newline
-                * but there will be more than just msg_data in the future
                 trap    #15
                 
                 addq    #$2, a0 * move to next opcode word
@@ -41,14 +38,11 @@ op_nop          move.w  sr, -(sp)
                 movem.l reglist_nop, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #14, d0
+                move.b  #13, d0
                 lea     msg_nop, a1
-                trap    #15
-                lea     newline, a1
                 trap    #15
                 
                 addq    #$2, a0
-                
 * ---- exit                
 op_nop_x        movem.l (sp)+, reglist_nop
                 rtr
@@ -57,6 +51,7 @@ op_nop_x        movem.l (sp)+, reglist_nop
 
 msg_data        dc.b    'DATA',0
 msg_nop         dc.b    'NOP',0
+
 
 *~Font name~Courier New~
 *~Font size~10~

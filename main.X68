@@ -4,30 +4,37 @@
 * Date       : April 10th, 2020
 * Description: This is a disassembler written for CSS 422 B.
 *-----------------------------------------------------------
-org_main    equ     $1000
-org_stack   equ     $2000
-            org     org_main
+org_main        equ     $1000
+org_stack       equ     $A000
+                org     org_main
 start:
-        lea         org_stack, sp * initialize stack
+                lea     org_stack, sp * initialize stack
 
 * ==== program code ====
         
 * Take user input for start and end address
-        jsr     get_user_input
+                jsr     get_user_input
 
 * Loading address
-        move.l   d0, a0
-        bsr      read_opcode
+                move.l  d0, a0
+                move.l  d1, a1
 
-        simhalt             * code is done
+* while current address <= end address                
+read_loop       cmpa.l  a1, a0
+                bgt     read_loop_x
+                
+                bsr     read_opcode
+                
+                bra     read_loop * loop again
+read_loop_x * loop exit
+
+                simhalt * code is done
         
 
 * ==== included files ====
-        include "user.X68"
-        include "detect.X68"
-        include "opcodes.X68"
-
-        nop                 * nothing so far
+                include "user.X68"
+                include "detect.X68"
+                include "opcodes.X68"
 
 * ==== constants and variables =====
 
@@ -45,17 +52,18 @@ input_inc_pt5   dc.w    '):',0
 input_s         dc.w    'start',0
 input_e         dc.w    'end',0
 
-CR              equ $0d
-LF              equ $0a
-HT              equ $09
+CR              equ     $0d
+LF              equ     $0a
+HT              equ     $09
 
 newline         dc.w    CR,LF,0
 indent          dc.w    HT,HT,0
 
 * ==== tests ====
-        include     "test.X68"
+                include "test.X68"
 * ==== end ====
-        end         start
+                end     start
+
 
 
 
