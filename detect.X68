@@ -177,6 +177,7 @@ read_gr4        move.w  sr, -(sp)
                 cmpi.w  #$4e71, d7 * check if the opcode is NOP
                 bne     *+4 * if not, skip past branch to NOP subroutine
                 bsr     op_nop
+                bra     read_gr4_x * leave after detecting opcode
                 
                 bsr     op_notfound
 * ---- exit        
@@ -332,6 +333,7 @@ read_gre_x      movem.l (sp)+, rl_gre
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
 
 
 *~Font name~Courier New~
