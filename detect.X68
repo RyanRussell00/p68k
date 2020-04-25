@@ -16,91 +16,21 @@ read_opcode     move.w  sr, -(sp)
                 movem.l rl_read_op, -(sp)
 * ---- read the opcode:
                 
+* 16 groups, one group for every combo of the first 4 bits of an opcode
+* example: if the opcode starts with 0011, it belongs in group 3
+* need to jump to the subroutine for a specific group
+* a jump table stores locations of the subroutines for every group
+
                 move.w  (a0), d7 * get the opcode data itself
                 rol.w   #$4, d7 * move bits 15-12 to bits 0-3
-                andi.b  #$f, d7 * clear bits 4-7 so cmpi.b doesn't see them
-
-* opcode group means the first four bits of any opcode
-* to narrow down the options, it picks 1 of 16 possible groups
-* however, we don't have to check every instruction
-* so groups 0, A, B, and F are not checked
-
-* check first 4 bits -> check the other bits in another subroutine
-
-op_group_1      cmpi.b  #$1, d7 * compare first four bits of given opcode
-                bne     op_group_2 * move to next opcode group
+                andi.w  #$f, d7 * clear bits 4-15
                 
-                bsr     read_gr1
-                bra     read_opcode_x * done, exit subroutine
+                * multiply by 4 because each index is 4 bytes apart
+                mulu    #$4, d7
+                lea     groups, a6 * load jump table first index
                 
-op_group_2      cmpi.b  #$2, d7
-                bne     op_group_3
-                
-                bsr     read_gr2
-                bra     read_opcode_x
-
-op_group_3      cmpi.b  #$3, d7
-                bne     op_group_4
-                
-                bsr     read_gr3
-                bra     read_opcode_x
-                
-op_group_4      cmpi.b  #$4, d7
-                bne     op_group_5
-                
-                bsr     read_gr4
-                bra     read_opcode_x
-
-op_group_5      cmpi.b  #$5, d7
-                bne     op_group_6
-                
-                bsr     read_gr5
-                bra     read_opcode_x
-
-op_group_6      cmpi.b  #$6, d7
-                bne     op_group_7
-                
-                bsr     read_gr6
-                bra     read_opcode_x
-
-op_group_7      cmpi.b  #$7, d7
-                bne     op_group_8
-                
-                bsr     read_gr7
-                bra     read_opcode_x
-
-op_group_8      cmpi.b  #$8, d7
-                bne     op_group_9
-                
-                bsr     read_gr8
-                bra     read_opcode_x
-
-op_group_9      cmpi.b  #$9, d7
-                bne     op_group_C
-                
-                bsr     read_gr9
-                bra     read_opcode_x
-
-op_group_C      cmpi.b  #$C, d7
-                bne     op_group_D
-                
-                bsr     read_grc
-                bra     read_opcode_x
-
-op_group_D      cmpi.b  #$D, d7
-                bne     op_group_E
-                
-                bsr     read_grd
-                bra     read_opcode_x
-
-op_group_E      cmpi.b  #$E, d7
-                bne     no_group
-                
-                bsr     read_gre
-                bra     read_opcode_x
-
-* doesn't match any valid group
-no_group        bsr     op_notfound * it's just gonna read out DATA
+                * not using bsr because jsr allows EA modes
+                jsr     $0(a6,d7.w) * table->(group number x 4)
                 
 * ---- exit        
 read_opcode_x   movem.l (sp)+, rl_read_op
@@ -329,10 +259,36 @@ read_gre_x      movem.l (sp)+, rl_gre
                 rtr
 
 
+* ==== jump tables ====
+
+jump_notfound   jmp     op_notfound
+* jumping direcctly to op_notfound will ruin the table address alignment
+* it seems that jumping forward adds 4 extra bytes to the opcode
+* but jumping backwards only adds 2 extra bytes
+
+groups:         jmp     jump_notfound   * group 0 not needed
+                jmp     read_gr1        * group 1
+                jmp     read_gr2        * group 2
+                jmp     read_gr3        * group 3
+                jmp     read_gr4        * group 4
+                jmp     read_gr5        * group 5
+                jmp     read_gr6        * group 6
+                jmp     read_gr7        * group 7
+                jmp     read_gr8        * group 8
+                jmp     read_gr9        * group 9
+                jmp     jump_notfound   * group A not needed
+                jmp     jump_notfound   * group B not needed
+                jmp     read_grc        * group C
+                jmp     read_grd        * group D
+                jmp     read_gre        * group E
+                jmp     jump_notfound   * group F not needed
                 
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
+
+
 
 
 
