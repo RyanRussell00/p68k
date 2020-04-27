@@ -4,67 +4,72 @@
 * Date       : April 10th, 2020
 * Description: This is a disassembler written for CSS 422 B.
 *-----------------------------------------------------------
-org_main    EQU     $1000
-org_stack   EQU     $5000
-org_test    EQU     $A000 * remove before final submission
-            ORG     org_main
-START:
-        MOVEA.L #000100000, SP * initialize stack
+org_main        equ     $1000
+org_stack       equ     $A000
+                org     org_main
+start:
+                lea     org_stack, sp * initialize stack
 
 * ==== program code ====
-
+        
 * Take user input for start and end address
-        JSR     get_user_input
+                jsr     get_user_input
 
 * Loading address
-        MOVE.L   d0, A2
-        MOVE.L   d1, A3
-        JSR      op_nop
+                move.l  d0, a0
+                move.l  d1, a1
 
-* put program code here
+* while current address <= end address                
+read_loop       cmpa.l  a1, a0
+                bgt     read_loop_x
+                
+                bsr     read_opcode
+                
+                bra     read_loop * loop again
+read_loop_x * loop exit
 
-        NOP                 * nothing so far
-
-        SIMHALT             * code is done
+                simhalt * code is done
         
 
-* all user input subroutines belong in a separate file
-        INCLUDE "user.X68"
-
-        NOP                 * nothing so far
-        
-* ==== subroutines ====
-* all opcode-handling subroutines belong in a seperate file
-        INCLUDE "sub.X68"
-
+* ==== included files ====
+                include "user.X68"
+                include "detect.X68"
+                include "opcodes.X68"
 
 * ==== constants and variables =====
 
-input_pt1       DC.W    'Please enter an even ',0
-input_pt2       DC.W    ' address between (',0
-input_pt3       DC.W    ') and (',0
-input_pt4       DC.W    '):',0
+input_pt1       dc.w    'Please enter an even ',0
+input_pt2       dc.w    ' address between (',0
+input_pt3       dc.w    ') and (',0
+input_pt4       dc.w    '):',0
 
-input_inc_pt1   DC.W    'Input is incorrect.',0
-input_inc_pt2   DC.W    'Please enter an even value',0
-input_inc_pt3   DC.W    'within the range (',0
-input_inc_pt4   DC.W    ') and (',0
-input_inc_pt5   DC.W    '):',0
+input_inc_pt1   dc.w    'Input is incorrect.',0
+input_inc_pt2   dc.w    'Please enter an even value',0
+input_inc_pt3   dc.w    'within the range (',0
+input_inc_pt4   dc.w    ') and (',0
+input_inc_pt5   dc.w    '):',0
 
-input_s         DC.W    'start',0
-input_e         DC.W    'end',0
+input_s         dc.w    'start',0
+input_e         dc.w    'end',0
 
-CR EQU $0D
-LF EQU $0A
-HT EQU $09
+CR              equ     $0d
+LF              equ     $0a
+HT              equ     $09
 
-newline         DC.W    CR,LF,0
-indent          DC.W    HT,HT,0
+newline         dc.w    CR,LF,0
+indent          dc.w    HT,HT,0
 
 * ==== tests ====
-        INCLUDE     "test.X68"
+                include "test.X68"
+                * don't move this above end start
+                * or else the ORGs get screwed up
 * ==== end ====
-        END         START
+                end     start
+
+
+
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
