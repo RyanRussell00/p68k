@@ -22,8 +22,8 @@ read_opcode     move.w  sr, -(sp)
 * a jump table stores locations of the subroutines for every group
 
                 move.w  (a0), d7 * get the opcode data itself
-                rol.w   #$4, d7 * move bits 15-12 to bits 0-3
-                andi.w  #$f, d7 * clear bits 4-15
+                rol.w   #$4, d7 * move bits 15-12 to bits 3-0
+                andi.w  #%1111, d7 * clear bits 15-4
                 
                 * multiply by 4 because each index is 4 bytes apart
                 mulu    #$4, d7
@@ -48,7 +48,7 @@ read_gr1        move.w  sr, -(sp)
                 movem.l rl_gr1, -(sp)
 * ---- subroutine code:
                 
-                addq    #$2, a0
+                bsr     op_move * MOVE.B
                 
 * ---- exit        
 read_gr1_x      movem.l (sp)+, rl_gr1
@@ -66,7 +66,15 @@ read_gr2        move.w  sr, -(sp)
                 movem.l rl_gr2, -(sp)
 * ---- subroutine code:
                 
-                addq    #$2, a0
+                move.w  (a0), d7 * get the opcode data itself
+                andi.w  #%111000000, d7 * clear all bits except 8-6
+                cmpi.w  #%001000000, d7 * check if bits 8-6 are 001
+                bne     gr2_skip1 * if not equal, skip to MOVE opcode
+                
+                bsr     op_movea * if equal, it is MOVEA.L
+                bra     read_gr2_x * after MOVEA, go to subroutine exit
+                
+gr2_skip1       bsr     op_move * if not equal, it is MOVE.L
                 
 * ---- exit        
 read_gr2_x      movem.l (sp)+, rl_gr2
@@ -84,7 +92,15 @@ read_gr3        move.w  sr, -(sp)
                 movem.l rl_gr3, -(sp)
 * ---- subroutine code:
                 
-                addq    #$2, a0
+                move.w  (a0), d7 * get the opcode data itself
+                andi.w  #%111000000, d7 * clear all bits except 8-6
+                cmpi.w  #%001000000, d7 * check if bits 8-6 are 001
+                bne     gr3_skip1 * if not equal, skip to MOVE opcode
+                
+                bsr     op_movea * if equal, it is MOVEA.W
+                bra     read_gr3_x * after MOVEA, go to subroutine exit
+                
+gr3_skip1       bsr     op_move * if not equal, it is MOVE.W
                 
 * ---- exit        
 read_gr3_x      movem.l (sp)+, rl_gr3
@@ -104,11 +120,19 @@ read_gr4        move.w  sr, -(sp)
                 
                 move.w  (a0), d7 * get the opcode data itself
                 
+                * NOP recognition
                 cmpi.w  #$4e71, d7 * check if the opcode is NOP
-                bne     *+4 * if not, skip past branch to NOP subroutine
+                bne     gr4_skip1 * if not, skip the NOP subroutine
                 bsr     op_nop
-                bra     read_gr4_x * leave after detecting opcode
+                bra     read_gr4_x * leave after detecting NOP
                 
+gr4_skip1:      * RTS recognition
+                cmpi.w  #$4e75, d7 * check if the opcode is RTS
+                bne     gr4_skip2 * if not, skip the RTS subroutine
+                bsr     op_rts
+                bra     read_gr4_x * leave after detecting RTS
+                
+gr4_skip2:      
                 bsr     op_notfound
 * ---- exit        
 read_gr4_x      movem.l (sp)+, rl_gr4
@@ -286,6 +310,9 @@ groups:         jmp     jump_notfound   * group 0 not needed
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
+
+
 
 
 

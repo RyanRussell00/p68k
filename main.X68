@@ -61,8 +61,11 @@ indent          dc.w    HT,HT,0
 
 * ==== tests ====
                 include "test.X68"
+                * don't move this above end start
+                * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 
