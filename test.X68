@@ -41,7 +41,26 @@ test_start  nop
             * group 8
             or.b    d0, d1
             
+            * group 9
+            sub.b   d0, d1
+            
+            * group c
+            and.b   d0, d1
+            
+            * group d
+            add.b   d0, d1
+            adda.w  a0, a1
+            
+            * group e
+            lsl.b   #$1, d0
+            lsr.b   #$1, d0
+            asl.b   #$1, d0
+            asr.b   #$1, d0
+            rol.b   #$1, d0
+            ror.b   #$1, d0
+            
 test_end    nop
+
 
 
 *~Font name~Courier New~
