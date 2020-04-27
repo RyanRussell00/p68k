@@ -126,13 +126,45 @@ read_gr4        move.w  sr, -(sp)
                 bsr     op_nop
                 bra     read_gr4_x * leave after detecting NOP
                 
-gr4_skip1:      * RTS recognition
-                cmpi.w  #$4e75, d7 * check if the opcode is RTS
-                bne     gr4_skip2 * if not, skip the RTS subroutine
-                bsr     op_rts
-                bra     read_gr4_x * leave after detecting RTS
+gr4_skip1:      * MOVEM recognition
+                move.w  d7, d6
+                andi.w  #%101110000000, d6 * clear all bits but 11, 9-7
+                cmpi.w  #%100010000000, d6 * check if bit 11 = 1, bits 9-7 = 001
+                bne     gr4_skip2 * if not, skip the MOVEM subroutine
+                bsr     op_movem
+                bra     read_gr4_x
                 
-gr4_skip2:      
+gr4_skip2:      * LEA recognition
+                move.w  d7, d6
+                andi.w  #%111000000, d6 * clear all bits but 8-6
+                cmpi.w  #%111000000, d6 * check if bits 8-6 = 111
+                bne     gr4_skip3
+                bsr     op_lea
+                bra     read_gr4_x
+
+gr4_skip3:      * NOT recognition
+                move.w  d7, d6
+                andi.w  #%111100000000, d6 * clear all bits but 11-8
+                cmpi.w  #%011000000000, d6 * check if bits 11-8 = 0110
+                bne     gr4_skip4
+                bsr     op_not
+                bra     read_gr4_x
+
+gr4_skip4:      * JSR recognition
+                move.w  d7, d6
+                andi.w  #%111111000000, d6 * clear all bits but 11-6
+                cmpi.w  #%111010000000, d6 * check if bits 11-6 = 111010
+                bne     gr4_skip5
+                bsr     op_jsr
+                bra     read_gr4_x
+
+gr4_skip5:      * RTS recognition
+                cmpi.w  #$4e75, d7 * check if the opcode is RTS
+                bne     gr4_skip6 * if not, skip the RTS subroutine
+                bsr     op_rts
+                bra     read_gr4_x
+                
+gr4_skip6:
                 bsr     op_notfound
 * ---- exit        
 read_gr4_x      movem.l (sp)+, rl_gr4
@@ -150,8 +182,17 @@ read_gr5        move.w  sr, -(sp)
                 movem.l rl_gr5, -(sp)
 * ---- subroutine code:
                 
-                addq    #$2, a0
+                move.w  (a0), d7
                 
+                * ADDQ recognition
+                andi.w  #%100000000, d7 * clear all bits but 8
+                cmpi.w  #%0, d7 * check if bit 8 = 0
+                bne     gr5_skip1
+                bsr     op_addq
+                bra     read_gr5_x
+                
+gr5_skip1:
+                bsr     op_notfound
 * ---- exit        
 read_gr5_x      movem.l (sp)+, rl_gr5
                 rtr
@@ -168,8 +209,24 @@ read_gr6        move.w  sr, -(sp)
                 movem.l rl_gr6, -(sp)
 * ---- subroutine code:
                 
-                addq    #$2, a0
+                move.w  (a0), d7
                 
+                * BRA recognition
+                andi.w  #%111100000000, d7 * clear all bits but 11-8
+                cmpi.w  #%0, d7 * check if bits 11-8 = 0000
+                bne     gr6_skip1
+                bsr     op_bra
+                bra     read_gr6_x
+                
+gr6_skip1:      * Bcc recognition
+                cmpi.w  #%000100000000, d7 * check if bits 11-8 are = 0001
+                * if bits 11-8 are 0001, it's not Bcc but actually BSR
+                beq     gr6_skip2 * notice how it's beq, not bne
+                bsr     op_bcc
+                bra     read_gr6_x
+                
+gr6_skip2:
+                bsr     op_notfound * this will happen if opcode = BSR
 * ---- exit        
 read_gr6_x      movem.l (sp)+, rl_gr6
                 rtr
@@ -186,8 +243,17 @@ read_gr7        move.w  sr, -(sp)
                 movem.l rl_gr7, -(sp)
 * ---- subroutine code:
                 
-                addq    #$2, a0
+                move.w  (a0), d7
                 
+                * MOVEQ recognition
+                andi.w  #%100000000, d7 * clear all bits but 8
+                cmpi.w  #%0, d7 * check if bit 8 = 0
+                bne     gr7_skip1
+                bsr     op_moveq
+                bra     read_gr7_x
+                
+gr7_skip1:
+                bsr     op_notfound
 * ---- exit        
 read_gr7_x      movem.l (sp)+, rl_gr7
                 rtr
@@ -204,8 +270,28 @@ read_gr8        move.w  sr, -(sp)
                 movem.l rl_gr8, -(sp)
 * ---- subroutine code:
                 
-                addq    #$2, a0
+                move.w  (a0), d7
                 
+                * OR recognition
+                move.w  d7, d6
+                andi.w  #%11000000, d6 * clear all bits but 7-6
+                cmpi.w  #%11000000, d6 * check if bits 7-6 are = 11
+                * if bits 7-6 are 11, it's not OR
+                beq     gr8_skip1
+                * but wait, there's more!
+                
+                move.w  d7, d6
+                andi.w  #%111110000, d6 * clear all bits but 8-4
+                cmpi.w  #%100000000, d6 * check if bits 8-4 are = 10000
+                * if bits 8-4 are 10000, it's not OR
+                beq     gr8_skip1
+                
+                * okay, now it is OR for sure
+                bsr     op_or
+                bra     read_gr8_x
+                
+gr8_skip1:
+                bsr     op_notfound
 * ---- exit        
 read_gr8_x      movem.l (sp)+, rl_gr8
                 rtr
@@ -310,6 +396,7 @@ groups:         jmp     jump_notfound   * group 0 not needed
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
 
 
 

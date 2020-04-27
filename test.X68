@@ -22,13 +22,27 @@ test_start  nop
             
             * group 4
             nop
-            movem   a0-a3/d1-d4, (a6)
+            movem.w a0-a3/d1-d4, (a6)
             lea     (a0), a1
-            not     d0
+            not.b   d0
             jsr     (a0)
             rts
             
+            * group 5
+            addq.b  #$1, d0
+            
+            * group 6
+            bgt     *+6
+            bra     *+6
+            
+            * group 7
+            moveq   #$1, d0
+            
+            * group 8
+            or.b    d0, d1
+            
 test_end    nop
+
 
 *~Font name~Courier New~
 *~Font size~10~
