@@ -8,8 +8,6 @@ START:                  ; first instruction of program
 
 * Put program code here
 
-    MOVE.L  #14, $A1235678
-
     *Tests for data register
     move.b  #%00111, d0    *move 000111 into d0
     bsr     printer
@@ -135,67 +133,82 @@ START:                  ; first instruction of program
     move.b  #%100000, d0 
     bsr     printer
     
+    *Test for Immediate
+    move.b  #%111100, d0
+    move.l  #%11001, d1
+    bsr     printer
+    
+    move.b  #%111100, d0
+    move.l  #%10111, d1
+    bsr     printer
+    
+    move.b  #%111100, d0
+    move.l  #%01111111111111111111111111111111, d1
+    bsr     printer
+    
     SIMHALT             ; halt simulator
     
 *-----------------------------------------------------------
 * //// Given a 6 bit op string it directs it to the correct printer
 * parameters:
 *   d0 - 6 bit binary string that holds the op mode/register
+*   d1 - (optional) additional data
 * return:
 *   prints to screen
 
-rl_printer      reg     a2-a6/d2-d7 * every reg except parameters/return
+rl_printer      reg     a0-a6/d2-d7 * every reg except parameters/return
 printer         move.w  sr, -(sp) * save CCR to stack
                 movem.l rl_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
                 
-                clr     d1          *clear everything in the temp register
+                *DO NOT MODIFY D1 because it holds additional data values
+                
+                clr     d2          *clear everything in the temp register
                 
                 *since the original value is untouched, whatever subroutine we call gets the original param
-                move.l  d0, d1      *move the parameter into temp register
+                move.l  d0, d2      *move the parameter into temp register
                 
-                and.l   #%111000, d1 *mask the temp register
+                and.l   #%111000, d2 *mask the temp register
                 
                 *start comparisons
-is_data         cmp.l   #%000000, d1 *data register
+is_data         cmp.l   #%000000, d2 *data register
                 bne     is_addr      *if not equal, try next
                 bsr     data_reg
                 bra     printer_x
                 
-is_addr         cmp.l   #%001000, d1 *address register
+is_addr         cmp.l   #%001000, d2 *address register
                 bne     is_ind_addr  *if not equal, try next
                 bsr     addr_reg
                 bra     printer_x
                 
-is_ind_addr     cmp.l   #%010000, d1 *indirect address register
+is_ind_addr     cmp.l   #%010000, d2 *indirect address register
                 bne     is_incrmnt  *if not equal, try next
                 bsr     ind_addr_reg
                 bra     printer_x
                 
-is_incrmnt      cmp.l   #%011000, d1 *post increment address register
+is_incrmnt      cmp.l   #%011000, d2 *post increment address register
                 bne     is_decrmnt    *if not equal, try next
                 bsr     inc_addr_reg
                 bra     printer_x
                 
-is_decrmnt      cmp.l   #%100000, d1 *pre decrement address register
+is_decrmnt      cmp.l   #%100000, d2 *pre decrement address register
                 bne     is_immdte    *if not equal, try next
                 bsr     dec_addr_reg
                 bra     printer_x
-               
-               *Use entire 6 bits for absolute and immediate since we need last 3 bits
-                move.l  d0, d1      *reset the temp variable with original value
-               
-is_immdte       cmp.l   #%111100, d1 *immediate
+                 
+is_immdte       *Use entire 6 bits for absolute and immediate since we need last 3 bits
+                move.l  d0, d2      *reset the temp variable with original value
+                cmp     #%111100, d2 *immediate
                 bne     is_abs_w     *if not equal, try next
-                bsr     dec_addr_reg *TODO: Write subroutine
+                bsr     immdte       
                 bra     printer_x
 
-is_abs_w        cmp.l   #%111000, d1 *absolute word
+is_abs_w        cmp.l   #%00111000, d2 *absolute word
                 bne     is_abs_l     *if not equal, try next
                 bsr     dec_addr_reg *TODO: Write subroutine
                 bra     printer_x
 
-is_abs_l        cmp.l   #%111001, d1 *absolute long
+is_abs_l        cmp.l   #%00111001, d2 *absolute long
                 beq     dec_addr_reg *TODO: Write subroutine              
                 
 * ---- exit        
@@ -583,8 +596,39 @@ dec_addr_reg_x  movem.l (sp)+, rl_dec_addr_reg *restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
 
+*-----------------------------------------------------------
+* //// Prints immediate data as decimal
+* parameters:
+*   d0 - op mode and op register
+*   d1 - hex value of the immediate data (MUST BE LONG)
+* return:
+*   prints to screen the decimal value of the hex value
 
+rl_immdte       reg     a0-a6/d2-d7      * every reg except parameters/return
+immdte          move.w  sr, -(sp)        * save CCR to stack
+                movem.l rl_immdte, -(sp) * save current regs to stack
+* ---- subroutine code:
+                
+                cmp     #%111100, d0     *check op to ensure its expected
+                bne     immdte_x         *if not expected, exit subroutine
+                
+                lea     pound_sign, a1  *load the pound sign
+                move.b  #14, d0         *set trap
+                trap    #15             *print to screen
+                
+                *Print value in d1.L as decimal
+                move.b  #3, d0          *set trap
+                trap    #15             *print to screen   
+                
+                lea     break, a1   *load the message for d0
+                move.b  #14, d0         *set trap
+                trap    #15             *print to screen
 
+                
+* ---- exit        
+immdte_x   		movem.l (sp)+, rl_immdte *restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
 
 * Put variables and constants here
 CR  EQU     $0D
@@ -639,6 +683,10 @@ decrmnt_addr_4 dc.b  '-(a4)', CR, LF, 0
 decrmnt_addr_5 dc.b  '-(a5)', CR, LF, 0
 decrmnt_addr_6 dc.b  '-(a6)', CR, LF, 0
 decrmnt_addr_7 dc.b  '-(a7)', CR, LF, 0
+
+*Immediate values prints
+pound_sign     dc.b  '#', 0
+break          dc.b  CR, LF, 0
 
     END    START        ; last line of source
 
