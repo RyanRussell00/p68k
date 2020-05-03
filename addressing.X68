@@ -146,6 +146,11 @@ START:                  ; first instruction of program
     move.l  #%01111111111111111111111111111111, d1
     bsr     printer
     
+    *Test for absolute
+    move.b  #%111001, d0
+    move.l  #$ABCD, d1
+    bsr     printer
+    
     SIMHALT             ; halt simulator
     
 *-----------------------------------------------------------
@@ -203,13 +208,13 @@ is_immdte       *Use entire 6 bits for absolute and immediate since we need last
                 bsr     immdte       
                 bra     printer_x
 
-is_abs_w        cmp.l   #%00111000, d2 *absolute word
+is_abs_w        cmp.l   #%111000, d2 *absolute word
                 bne     is_abs_l     *if not equal, try next
-                bsr     dec_addr_reg *TODO: Write subroutine
+                bsr     abs *TODO: Write subroutine
                 bra     printer_x
 
 is_abs_l        cmp.l   #%00111001, d2 *absolute long
-                beq     dec_addr_reg *TODO: Write subroutine              
+                beq     abs *TODO: Write subroutine              
                 
 * ---- exit        
 printer_x   		movem.l (sp)+, rl_printer *restore old registers
@@ -630,6 +635,81 @@ immdte_x   		movem.l (sp)+, rl_immdte *restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
 
+*-----------------------------------------------------------
+* //// Prints absolute value of the data as ASCII
+* parameters:
+*   d0 - op mode and op register
+*   d1 - hex value of the absolute data (MUST BE LONG)
+* return:
+*   prints to screen the decimal value of the hex value
+
+rl_abs          reg     a0-a6/d2-d7     * every reg except parameters/return
+abs             move.w  sr, -(sp)       * save CCR to stack
+                movem.l rl_abs, -(sp)   * save current regs to stack
+
+* ---- subroutine code:
+                
+                cmp     #%111000, d0    *check op to see if abs short
+                beq     abs_short
+                
+                cmp     #%111001, d0    *check op to see if abs long
+                bne     abs_x           *if not, exit
+                
+abs_long        
+                clr     d2              *clear temp register
+                move.l  d1, d2          *load long data into temp
+                bsr     hex_ascii       *print data
+                bra     abs_x                
+
+abs_short       
+                clr     d2              *clear temp register
+                move.w  d1, d2          *load word data into temp
+                bsr     hex_ascii       *print data
+                bra     abs_x   
+
+                
+* ---- exit        
+abs_x   		movem.l (sp)+, rl_abs *restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
+
+*-----------------------------------------------------------
+* //// Print hex value
+* parameters:
+*   d2 - ascii value
+* return:
+*   print ascii
+*
+rl_hex_ascii    reg     a0-a6/d0/d1/d3-d6
+hex_ascii       move.w  sr, -(sp) *save the ccr
+                movem.l rl_hex_ascii, -(sp) *save the registers
+                
+* ---- function ----
+
+        cmpi.l  #$30, d2
+        blt.b   hex_ascii_x    *exit the subroutine if invalid num
+        cmp.b   #$39, d2
+        bgt.b   letter      *branch if greater than 39, meaning its a letter
+        addi.b  #$30, d2    *subtract 30 from the number
+        bra     ascii_print *branch to concatenate value
+        
+letter  cmpi.b  #$41, d2
+        blt.b   hex_ascii_x *exit if invalid capital char
+        cmpi.b  #$46, d2
+        bgt.b   hex_ascii_x *exit if invalid capital char
+        addi.b  #$37, d2    *subtract 37 from letter
+        
+ascii_print
+        move.l   d2, (a1)      *load the message for data
+        move.b  #14, d0        *set trap
+        trap    #15            *print to screen
+                
+* ---- exit        
+hex_ascii_x   movem.l (sp)+, rl_hex_ascii   
+                rtr
+
+*-----------------------------------------------------------
+
 * Put variables and constants here
 CR  EQU     $0D
 LF  EQU     $0A
@@ -712,6 +792,8 @@ break          dc.b  CR, LF, 0
 * my_sub_x   		movem.l (sp)+, rl_mysub * restore old registers
 *                rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
+
+
 
 
 *~Font name~Courier New~
