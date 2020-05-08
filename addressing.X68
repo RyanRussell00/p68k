@@ -8,8 +8,17 @@ START:                  ; first instruction of program
 
 * Put program code here
 
+    *Proposed changes: make these the new parameters for the printer
+*    move.w  #%SOURCE, d7 *6 digit binary format (data mode + data reg)
+*    move.w  #%DESTIN, d6 * ^^
+*    lea     $OPCODE, a0 *address of the opcode we are at. +1 is 8 bits.
+
+    move.w   $4000, $3400
+    move.w   #4000, $3400
+    add.w    #2382, d0
+
     *Tests for data register
-    move.b  #%00111, d0    *move 000111 into d0
+    move.b  #%000111, d0    *move 000111 into d0
     bsr     printer
     
     move.b  #%000110, d0
@@ -792,6 +801,7 @@ break          dc.b  CR, LF, 0
 * my_sub_x   		movem.l (sp)+, rl_mysub * restore old registers
 *                rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
+
 
 
 

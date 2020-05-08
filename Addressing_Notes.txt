@@ -36,3 +36,19 @@ We can also look at the entire opmode (bits 8-6) if we need to know the size of 
 4. If bit 8 is 1, we look at bits 11-9 to print the source. Print the source.
 
 5. Look at bits 5-0 to print the destination.
+
+##Notes
+
+In A0, we move the address of the memory word we are dealing with.
+Use the address of the opcode as the parameter instead of the actual data register.
+Check the opcode at the address register to determine how many bytes of additional data we need to read.
+If we see immediate data or absolute address, look at memory + 2 to get the memory. (Every plus 2 is a word (16 bits)).
+Printer parameters: Source EA (d0), Destination (d1), Opcode address (a0)
+
+###Todo
+- Modify the parameters for the printer so user can pass in both source and destination at once (use another register to set null destination values to true	/false)
+	-Philips advice: Use SET to set all bits to 1
+
+- Gonna need to figure out how to print MOVEM
+	- We can just load the adddress of the OPCODE into A0, call the printer -> call movem_printer -> the printer will do A0 + 2
+		get the word, and print it -> then look at D1/D0 for the destination/source and print that as well
