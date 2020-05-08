@@ -8,6 +8,10 @@ START:                  ; first instruction of program
 
 * Put program code here
 
+    move.w   #2200, d1
+    move.l   #2200, d1
+
+*Todo:
     *Proposed changes: make these the new parameters for the printer
 *    move.w  #%SOURCE, d7 *6 digit binary format (data mode + data reg)
 *    move.w  #%DESTIN, d6 * ^^
@@ -16,6 +20,8 @@ START:                  ; first instruction of program
     move.w   $4000, $3400
     move.w   #4000, $3400
     add.w    #2382, d0
+    move.w   #$6969, (a0)
+    move.l   #$11112222, (a0)
 
     *Tests for data register
     move.b  #%000111, d0    *move 000111 into d0
@@ -170,7 +176,16 @@ START:                  ; first instruction of program
 * return:
 *   prints to screen
 
-rl_printer      reg     a0-a6/d2-d7 * every reg except parameters/return
+
+    *Proposed changes: make these the new parameters for the printer
+*    move.w  #%SOURCE, d7 *6 digit binary format (data mode + data reg)
+*    move.w  #%DESTIN, d6 * ^^
+*    lea     $OPCODE, a0 *address of the opcode we are at. +1 is 8 bits.
+
+*First read the source (d7) through the printer, if it needs additional word, the subroutine printing
+*the EA needs to read from A0 if it's source, read first word/long then save next address in A0.
+
+rl_printer      reg     a0-a6/d0-d6 * every reg except parameters/return
 printer         move.w  sr, -(sp) * save CCR to stack
                 movem.l rl_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -613,12 +628,12 @@ dec_addr_reg_x  movem.l (sp)+, rl_dec_addr_reg *restore old registers
 *-----------------------------------------------------------
 * //// Prints immediate data as decimal
 * parameters:
-*   d0 - op mode and op register
-*   d1 - hex value of the immediate data (MUST BE LONG)
+*   d7 - op mode and op register
+*   a0 - address of additional data to print
 * return:
 *   prints to screen the decimal value of the hex value
 
-rl_immdte       reg     a0-a6/d2-d7      * every reg except parameters/return
+rl_immdte       reg     a1-a6/d0-d6      * every reg except parameters/return
 immdte          move.w  sr, -(sp)        * save CCR to stack
                 movem.l rl_immdte, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -626,17 +641,20 @@ immdte          move.w  sr, -(sp)        * save CCR to stack
                 cmp     #%111100, d0     *check op to ensure its expected
                 bne     immdte_x         *if not expected, exit subroutine
                 
-                lea     pound_sign, a1  *load the pound sign
+                lea     pound_sign, a1  *load the pound sign to print
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 
-                *Print value in d1.L as decimal
-                move.b  #3, d0          *set trap
-                trap    #15             *print to screen   
+                *Todo: Print the data from the address in a0. Increment a0 to next word/long/waaat?
                 
-                lea     break, a1   *load the message for d0
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
+                
+*                *Print value in d1.L as decimal
+*                move.b  #3, d0          *set trap
+*                trap    #15             *print to screen   
+*                
+*                lea     break, a1   *load the message for d0
+*                move.b  #14, d0         *set trap
+*                trap    #15             *print to screen
 
                 
 * ---- exit        
@@ -806,7 +824,8 @@ break          dc.b  CR, LF, 0
 
 
 
+
 *~Font name~Courier New~
-*~Font size~16~
+*~Font size~12~
 *~Tab type~1~
 *~Tab size~4~

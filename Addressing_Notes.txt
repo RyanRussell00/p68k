@@ -52,3 +52,7 @@ Printer parameters: Source EA (d0), Destination (d1), Opcode address (a0)
 - Gonna need to figure out how to print MOVEM
 	- We can just load the adddress of the OPCODE into A0, call the printer -> call movem_printer -> the printer will do A0 + 2
 		get the word, and print it -> then look at D1/D0 for the destination/source and print that as well
+		
+- Change parameters to d6 (destination) /d7 (source)
+- The printer needs to loop if the "destination exists" register is true
+- At the end of the printer's loops, print a break line
