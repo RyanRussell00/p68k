@@ -46,7 +46,7 @@ If we see immediate data or absolute address, look at memory + 2 to get the memo
 Printer parameters: Source EA (d0), Destination (d1), Opcode address (a0)
 
 ###Todo
-- Modify the parameters for the printer so user can pass in both source and destination at once (use another register to set null destination values to true	/false)
+- Modify the parameters for the printer so user can pass in both source and destination at once (use another register to set null destination values to true/false)
 	-Philips advice: Use SET to set all bits to 1
 
 - Gonna need to figure out how to print MOVEM
@@ -56,3 +56,6 @@ Printer parameters: Source EA (d0), Destination (d1), Opcode address (a0)
 - Change parameters to d6 (destination) /d7 (source)
 - The printer needs to loop if the "destination exists" register is true
 - At the end of the printer's loops, print a break line
+
+-*First read the source (d7) through the printer, if it needs additional word, the subroutine printing
+*the EA needs to read from A0 if it's source, read first word/long then save next address in A0.

@@ -171,21 +171,16 @@ START:                  ; first instruction of program
 *-----------------------------------------------------------
 * //// Given a 6 bit op string it directs it to the correct printer
 * parameters:
-*   d0 - 6 bit binary string that holds the op mode/register
-*   d1 - (optional) additional data
+*   d7 - 6 bit binary string that holds the SOURCE op mode/register
+*   d6 - 6 bit binary string that holds the DESTINATION op mode/register
+*   d5 - set to 1 if destination ea exists, set to 0 otherwise
+*   a0 - address of the opcode we are looking at
 * return:
 *   prints to screen
 
 
-    *Proposed changes: make these the new parameters for the printer
-*    move.w  #%SOURCE, d7 *6 digit binary format (data mode + data reg)
-*    move.w  #%DESTIN, d6 * ^^
-*    lea     $OPCODE, a0 *address of the opcode we are at. +1 is 8 bits.
 
-*First read the source (d7) through the printer, if it needs additional word, the subroutine printing
-*the EA needs to read from A0 if it's source, read first word/long then save next address in A0.
-
-rl_printer      reg     a0-a6/d0-d6 * every reg except parameters/return
+rl_printer      reg     a1-a6/d0-d4 * every reg except parameters/return
 printer         move.w  sr, -(sp) * save CCR to stack
                 movem.l rl_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -241,7 +236,13 @@ is_abs_l        cmp.l   #%00111001, d2 *absolute long
                 beq     abs *TODO: Write subroutine              
                 
 * ---- exit        
-printer_x   		movem.l (sp)+, rl_printer *restore old registers
+printer_x   	   
+                *Check if we have second EA to print
+                cmpi    #1, d5 *if d5 is 1 we have another ea to print
+                clr     d5     *clear d5 to prevent infinite loop
+                beq     printer
+
+                movem.l (sp)+, rl_printer *restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
     
@@ -648,6 +649,7 @@ immdte          move.w  sr, -(sp)        * save CCR to stack
                 *Todo: Print the data from the address in a0. Increment a0 to next word/long/waaat?
                 
                 
+                
 *                *Print value in d1.L as decimal
 *                move.b  #3, d0          *set trap
 *                trap    #15             *print to screen   
@@ -819,6 +821,7 @@ break          dc.b  CR, LF, 0
 * my_sub_x   		movem.l (sp)+, rl_mysub * restore old registers
 *                rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
+
 
 
 
