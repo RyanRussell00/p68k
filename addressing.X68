@@ -7,6 +7,8 @@
 START:                  ; first instruction of program
 
 * Put program code here
+
+    jsr     printer_tests
     
     SIMHALT             ; halt simulator
 
@@ -774,6 +776,10 @@ immdte          move.w  sr, -(sp)        * save CCR to stack
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 
+                lea     dollar_sign, a1 *print hex dollar sign
+                move.b  #14, d0 
+                trap    #15
+                
                 *Since we print source then destination, if we are printing source A0 is the opcode
                 *...if we are printing destination, A0 is the source. So by adding 2 (word size)
                 *...we get the next additional data in memory
@@ -781,8 +787,7 @@ immdte          move.w  sr, -(sp)        * save CCR to stack
                 *Read the additional data at A0 (the opcode) + 2 (the next word)
                 addq.l  #$2, a0
                 move.w  (a0), d1
-                move.b  #3, d0
-                trap    #15
+                bsr     print_hex_w     *print value as hex word
                 
 * ---- exit        
 immdte_x   		movem.l (sp)+, rl_immdte *restore old registers
@@ -822,8 +827,6 @@ abs_long
                 addq    #2, a0
                 move.l  (a0), d1
                 bsr     print_hex_l
-                move.b  #3, d0
-                trap    #15
                 *Since we printed long we need to move forward 4 bytes...
                 *...the next time we call this function it moves forward 2 bytes, so we add 2 here.
                 addq    #2, a0
@@ -838,8 +841,7 @@ abs_short
                 *Read the additional data at A0 (the opcode) + 2 (the next word)
                 addq    #2, a0
                 move.W  (a0), d1
-                move.b  #3, d0
-                trap    #15
+                bsr     print_hex_w
 
 * ---- exit        
 abs_x   		movem.l (sp)+, rl_abs *restore old registers
@@ -872,41 +874,75 @@ reset_printer_x movem.l (sp)+, rl_reset_printer * restore old registers
 *-----------------------------------------------------------
 
 *-----------------------------------------------------------
-* //// Print hex value
+* //// print long (32 bits) as hex digit
 * parameters:
-*   d2 - ascii value
+*   d1 - contains word to print as hex
 * return:
-*   print ascii
+*   none
 *
-*rl_hex_ascii    reg     a0-a6/d0/d1/d3-d6
-*hex_ascii       move.w  sr, -(sp) *save the ccr
-*                movem.l rl_hex_ascii, -(sp) *save the registers
-*                
-** ---- function ----
-*
-*        cmpi.l  #$30, d2
-*        blt.b   hex_ascii_x    *exit the subroutine if invalid num
-*        cmp.b   #$39, d2
-*        bgt.b   letter      *branch if greater than 39, meaning its a letter
-*        addi.b  #$30, d2    *subtract 30 from the number
-*        bra     ascii_print *branch to concatenate value
-*        
-*letter  cmpi.b  #$41, d2
-*        blt.b   hex_ascii_x *exit if invalid capital char
-*        cmpi.b  #$46, d2
-*        bgt.b   hex_ascii_x *exit if invalid capital char
-*        addi.b  #$37, d2    *subtract 37 from letter
-*        
-*ascii_print
-*        move.l   d2, (a1)      *load the message for data
-*        move.b  #14, d0        *set trap
-*        trap    #15            *print to screen
-*                
-** ---- exit        
-*hex_ascii_x   movem.l (sp)+, rl_hex_ascii   
-*                rtr
+rl_print_hex_l  reg     a0-a6/d0-d7
+print_hex_l     move.w  sr, -(sp)
+                movem.l rl_print_hex_l, -(sp)
+* ---- subroutine code:
+                
+                swap    d1              *flip long or else it prints in reverse
+                bsr     print_hex_w     *print first half of long
+                swap    d1              *flip first half of register to second half
+                bsr     print_hex_w     *print rest of long
+                
+* ---- exit
+print_hex_l_x   movem.l (sp)+, rl_print_hex_l
+                rtr
 
 *-----------------------------------------------------------
+* //// print word (16 bits) as hex digit
+* parameters:
+*   d1 - contains word to print as hex
+* return:
+*   none
+*
+rl_print_hex_w  reg     a0-a6/d0-d7
+print_hex_w     move.w  sr, -(sp)
+                movem.l rl_print_hex_w, -(sp)
+* ---- subroutine code:
+                
+                rol.w   #$4, d1 * rotate first 4 bits to last 4 bits
+                bsr     print_hex_n
+                rol.w   #$4, d1
+                bsr     print_hex_n
+                rol.w   #$4, d1
+                bsr     print_hex_n
+                rol.w   #$4, d1
+                bsr     print_hex_n
+                
+* ---- exit
+print_hex_w_x   movem.l (sp)+, rl_print_hex_w
+                rtr
+
+*-----------------------------------------------------------
+* //// print nibble (4 bits) as hex digit
+* parameters:
+*   d1 - contains nibble to print as hex
+* return:
+*   none
+*
+rl_print_hex_n  reg     a0-a6/d0-d7
+print_hex_n     move.w  sr, -(sp)
+                movem.l rl_print_hex_n, -(sp)
+* ---- subroutine code:
+                
+                andi.b  #%00001111, d1 * clear first 4 bits
+                addi.b  #$30, d1 * ASCII offset to start at char 0
+                cmpi.b  #$39, d1 * check if above ASCII $39
+                ble     pr_hn_skip1 * hex $0-9 can be safely printed
+                addi.b  #$7, d1 * hex $A-F needs another ASCII offset
+                
+pr_hn_skip1     move.b  #6, d0 * display char at d1.b
+                trap    #15
+                
+* ---- exit
+print_hex_n_x   movem.l (sp)+, rl_print_hex_n
+                rtr
 
 * Put variables and constants here
 CR  EQU     $0D

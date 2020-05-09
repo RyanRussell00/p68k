@@ -9,8 +9,6 @@ org_stack       equ     $A000
                 org     org_main
 start:
                 lea     org_stack, sp * initialize stack
-                
-                bsr printer_tests
 
 * ==== program code ====
                 
@@ -90,9 +88,9 @@ print_hex_l     move.w  sr, -(sp)
                 movem.l rl_print_hex_l, -(sp)
 * ---- subroutine code:
                 
-                bsr     print_hex_w     *print first half of long
-                swap    d1              *flip first half of register to second half
-                bsr     print_hex_w     *print rest of long
+                print_hex_w     *print first half of long
+                swap    d1      *flip first half of register to second half
+                print_hex_w     *print rest of long
                 
 * ---- exit
 print_hex_l_x   movem.l (sp)+, rl_print_hex_l
@@ -149,10 +147,9 @@ print_hex_n_x   movem.l (sp)+, rl_print_hex_n
                 rtr
 
 * ==== included files ====
-                include "user.X68"
+*               include "user.X68"
                 include "detect.X68"
                 include "opcodes.X68"
-                include "addressing.X68"
 
 * ==== constants and variables =====
 
