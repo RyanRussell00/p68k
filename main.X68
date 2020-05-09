@@ -9,6 +9,8 @@ org_stack       equ     $A000
                 org     org_main
 start:
                 lea     org_stack, sp * initialize stack
+                
+                bsr printer_tests
 
 * ==== program code ====
                 
@@ -77,6 +79,26 @@ print_space_x   movem.l (sp)+, rl_print_space
                 rtr
 
 *-----------------------------------------------------------
+* //// print long (32 bits) as hex digit
+* parameters:
+*   d1 - contains word to print as hex
+* return:
+*   none
+*
+rl_print_hex_l  reg     a0-a6/d0-d7
+print_hex_l     move.w  sr, -(sp)
+                movem.l rl_print_hex_l, -(sp)
+* ---- subroutine code:
+                
+                bsr     print_hex_w     *print first half of long
+                swap    d1              *flip first half of register to second half
+                bsr     print_hex_w     *print rest of long
+                
+* ---- exit
+print_hex_l_x   movem.l (sp)+, rl_print_hex_l
+                rtr
+
+*-----------------------------------------------------------
 * //// print word (16 bits) as hex digit
 * parameters:
 *   d1 - contains word to print as hex
@@ -130,6 +152,7 @@ print_hex_n_x   movem.l (sp)+, rl_print_hex_n
                 include "user.X68"
                 include "detect.X68"
                 include "opcodes.X68"
+                include "addressing.X68"
 
 * ==== constants and variables =====
 
@@ -162,6 +185,7 @@ indent          dc.w    HT,HT,0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 

@@ -7,8 +7,18 @@
 START:                  ; first instruction of program
 
 * Put program code here
+    
+    SIMHALT             ; halt simulator
 
-    *Tests for data register
+*-----------------------------------------------------------
+* //// Tests for the EA printer
+*
+rl_printer_tests    	reg     a0-a6/d0-d7 * every reg except parameters/return
+printer_tests    move.w  sr, -(sp) * save CCR to stack
+                    movem.l rl_printer_tests, -(sp) * save current regs to stack
+* ---- subroutine code:
+                
+                *Tests for data register
     bsr     reset_printer
     move.b  #%000111, d7
     move.b  #%000110, d6
@@ -264,9 +274,12 @@ START:                  ; first instruction of program
     move.b  #%100111, d6
     move.l  #1, d5              *destination exists flag = true
     bsr     printer
-    
-    SIMHALT             ; halt simulator
-    
+                
+* ---- exit        
+printer_tests_x   		movem.l (sp)+, rl_printer_tests * restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
+
 *-----------------------------------------------------------
 * //// Given a 6 bit op string it directs it to the correct printer
 * parameters:
@@ -808,6 +821,7 @@ abs_long
                 *Read the additional data at A0 (the opcode) + 2, then move forward by 2
                 addq    #2, a0
                 move.l  (a0), d1
+                bsr     print_hex_l
                 move.b  #3, d0
                 trap    #15
                 *Since we printed long we need to move forward 4 bytes...
@@ -956,29 +970,6 @@ space          dc.b  ' ', 0
 comma          dc.b  ',' , 0
 
     END    START        ; last line of source
-
-
-
-*-----------------------------------------------------------
-* //// my subroutine name
-* parameters:
-*   d0 - description of whatever you pass to the subroutine
-*   d1 - description of whatever you pass to the subroutine
-* return:
-*   a0 - description of whatever you return from the subroutine
-*   a1 - description of whatever you return from the subroutine
-*
-* rl_mysub    	reg     a2-a6/d2-d7 * every reg except parameters/return
-* my_sub_name     move.w  sr, -(sp) * save CCR to stack
-*                movem.l rl_mysub, -(sp) * save current regs to stack
-* ---- subroutine code:
-                
-                * do shit
-                
-* ---- exit        
-* my_sub_x   		movem.l (sp)+, rl_mysub * restore old registers
-*                rtr * restore CCR, exit subroutine
-*-----------------------------------------------------------
 
 
 
