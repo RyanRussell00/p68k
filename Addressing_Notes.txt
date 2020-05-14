@@ -43,19 +43,22 @@ In A0, we move the address of the memory word we are dealing with.
 Use the address of the opcode as the parameter instead of the actual data register.
 Check the opcode at the address register to determine how many bytes of additional data we need to read.
 If we see immediate data or absolute address, look at memory + 2 to get the memory. (Every plus 2 is a word (16 bits)).
-Printer parameters: Source EA (d0), Destination (d1), Opcode address (a0)
+
+##Questions:
+- How are we printing BRA?
 
 ###Todo
-- Modify the parameters for the printer so user can pass in both source and destination at once (use another register to set null destination values to true/false)
-	-Philips advice: Use SET to set all bits to 1
-
 - Gonna need to figure out how to print MOVEM
 	- We can just load the adddress of the OPCODE into A0, call the printer -> call movem_printer -> the printer will do A0 + 2
 		get the word, and print it -> then look at D1/D0 for the destination/source and print that as well
-		
-- Change parameters to d6 (destination) /d7 (source)
-- The printer needs to loop if the "destination exists" register is true
-- At the end of the printer's loops, print a break line
-
--*First read the source (d7) through the printer, if it needs additional word, the subroutine printing
-*the EA needs to read from A0 if it's source, read first word/long then save next address in A0.
+-MOVEM printer:
+	- Check direction field to see if we are going reg -> mem or mem -> reg (maybe load into other register?)
+	- Check the size bit (maybe load into other register?)
+	- The word after the instruction contains which registers to transfer
+		- PostInc: A7 through D0 (0 - 15 bits)
+		- PreDec: D0 through A7 (0 - 15 bits)
+	-Example:
+	MOVEM.W D0/D1/d2, -(A0)
+	48A0 E000
+	0100 1000 1010 0000 1110 0000 0000 0000‬
+- BRA Printer
