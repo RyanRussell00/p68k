@@ -52,13 +52,5 @@ If we see immediate data or absolute address, look at memory + 2 to get the memo
 	- We can just load the adddress of the OPCODE into A0, call the printer -> call movem_printer -> the printer will do A0 + 2
 		get the word, and print it -> then look at D1/D0 for the destination/source and print that as well
 -MOVEM printer:
-	- Check direction field to see if we are going reg -> mem or mem -> reg (maybe load into other register?)
-	- Check the size bit (maybe load into other register?)
-	- The word after the instruction contains which registers to transfer
-		- PostInc: A7 through D0 (0 - 15 bits)
-		- PreDec: D0 through A7 (0 - 15 bits)
-	-Example:
-	MOVEM.W D0/D1/d2, -(A0)
-	48A0 E000
-	0100 1000 1010 0000 1110 0000 0000 0000‬
+	- Check if NOT on bit 16, print slash
 - BRA Printer

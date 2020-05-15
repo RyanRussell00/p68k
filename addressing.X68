@@ -142,6 +142,7 @@ print_registers_list
                 move    #1, d4
                 
 setup_reg_print
+                move.l  #1, d1      *clear the flag to prevent extra slashes from printing
                 clr     d5          *clear counter
                 addq    #$2, a0     *go to word after opcode
                 move.w  (a0), d2    *save the register list mask into data register  
@@ -156,8 +157,16 @@ print_reg
                 bra     print_reg   *repeat loop
                 
 reg_found       *print register
+                cmpi.b  #1, d1      *check if first value. 1 = first value
+                beq     no_slash    *if first value, print NO slash
+                bsr     print_slash *if not first value, print slash BEFORE register
                 bsr     reg_list_printer
-                bsr     print_slash
+                addq.b  #1, d5      *increment counter
+                bra     print_reg   *repeat loop
+                
+no_slash
+                clr     d1
+                bsr     reg_list_printer
                 addq.b  #1, d5      *increment counter
                 bra     print_reg   *repeat loop
            
@@ -195,8 +204,8 @@ reg_list_printer move.w  sr, -(sp)
                 *for predecrement only:
                 *subtract 15 from d1
                 move.l  #15, d3
-                sub     d1, d3 
-                move.l  d3, d1      
+                sub     d1, d3
+                move.l  d3, d1
                 
                 *For NON predecrement, counter = 0 is A7 and counter = 15 is D0
                 *For PREDECREMENT: We do 15 - counter, so we get: counter = 0 is A7 and counter = 15 = D0
@@ -312,7 +321,9 @@ print_d7_list   cmp     #8, d1    *compare to see if d7
                 trap    #15             *print to screen                
                 
 * ---- exit
-reg_list_printer_x movem.l (sp)+, rl_reg_list_printer
+reg_list_printer_x 
+                
+                movem.l (sp)+, rl_reg_list_printer
                 rtr
 *-----------------------------------------------------------
     
@@ -1273,6 +1284,7 @@ comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
 
     END    START        ; last line of source
+
 
 
 
