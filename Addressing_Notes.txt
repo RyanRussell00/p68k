@@ -54,3 +54,4 @@ If we see immediate data or absolute address, look at memory + 2 to get the memo
 -MOVEM printer:
 	- Check if NOT on bit 16, print slash
 - BRA Printer
+- If EA mode is not supported print "Incorrect EA mode"
