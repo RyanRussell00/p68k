@@ -59,9 +59,45 @@ test_start  nop
             rol.b   #$1, d0
             ror.b   #$1, d0
             
+            * extras to test screen limits
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            nop
+            
 test_end    nop
-
-
 
 
 *~Font name~Courier New~

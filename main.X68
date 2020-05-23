@@ -18,23 +18,59 @@ start:
 * Loading address
                 move.l  d0, a0
                 move.l  d1, a1
+                
+                * counter for lines printed out
+                move.l  #num_first_lines, d2
 
 * while current address <= end address                
 read_loop       cmpa.l  a1, a0
                 bgt     read_loop_x
                 
+                cmpi.l  #screen_limit, d2 * if printed too many lines
+                bge     limit_reached
+                * bge instead of bgt because an extra message is printed
+                * at the bottom every time the limit is reached
+                
                 move.w  a0, d1
                 bsr     print_hex_w
                 bsr     print_space
-                
                 bsr     read_opcode
                 
+                addq.l  #1, d2 * increment counter
                 bra     read_loop * loop again
+                
+limit_reached   bsr     wait_user * wait for user to press any key
+                clr.l   d2 * reset counter
+                bra     read_loop
+                
 read_loop_x * loop exit
 
                 simhalt * code is done
         
 * ==== utility subroutines ====
+
+*-----------------------------------------------------------
+* //// wait for user to press any key
+* parameters:
+*   none
+* return:
+*   none
+*
+rl_wait_user    reg     a0-a6/d0-d7
+wait_user       move.w  sr, -(sp)
+                movem.l rl_wait_user, -(sp)
+* ---- subroutine code:
+                
+                move.b  #14, d0 * print null-term string without CR, LF
+                lea     (msg_wait), a1
+                trap    #15
+                
+                move.b  #5, d0 * read character from keyboard
+                trap    #15
+                
+* ---- exit
+wait_user_x     movem.l (sp)+, rl_wait_user
+                rtr
 
 *-----------------------------------------------------------
 * //// print newline
@@ -152,6 +188,11 @@ print_hex_n_x   movem.l (sp)+, rl_print_hex_n
                 include "opcodes.X68"
 
 * ==== constants and variables =====
+
+num_first_lines equ     2 * num of lines printed before the main loop
+screen_limit    equ     31 * lines that can fit on the screen
+
+msg_wait        dc.w    'Press any key to continue... ',0
 
 input_pt1       dc.w    'Please enter an even ',0
 input_pt2       dc.w    ' address between (',0
