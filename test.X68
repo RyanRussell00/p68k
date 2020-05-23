@@ -10,7 +10,7 @@ test_org    equ     $5000
 test_start  nop
             
             * group 1
-            move.b  d1, d2
+            move.b  d0, d0
             
             * group 2
             move.l  d0, d1
@@ -98,6 +98,7 @@ test_start  nop
             nop
             
 test_end    nop
+
 
 
 *~Font name~Courier New~
