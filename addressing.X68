@@ -3,15 +3,15 @@
 * Description: Detects the addressing mode and prints it to screen
 *-----------------------------------------------------------
    
- ORG    $1000
-START:                  ; first instruction of program
-
-* Put program code here
+* ORG    $1000
+*START:                  ; first instruction of program
+*
+** Put program code here
 
     jsr     printer_tests   *start tests for the ea printer
     
-    SIMHALT             ; halt simulator
-
+*    SIMHALT             ; halt simulator
+                
 *-----------------------------------------------------------
 * //// Given a 6 bit op string it directs it to the correct printer. DOES NOT PRINT MOVEM.
 * parameters:
@@ -38,7 +38,7 @@ start_printer
                 *since the original value is untouched, whatever subroutine we call gets the original param
                 move.l  d7, d2      *move the parameter into temp register
                 
-                and.l   #%111000, d2 *mask the temp register
+                and.l   #%111000, d2 *mask the temp register to get addressing mode
                 
                 *start comparisons
 is_data         cmp.l   #%000000, d2 *data register
@@ -93,9 +93,7 @@ printer_x
                 beq     printer_loop
                 
                 *print line break
-                lea     break, a1
-                move.b  #14, d0
-                trap    #15
+                bsr     print_nl        
 
                 movem.l (sp)+, rl_printer *restore old registers
                 rtr * restore CCR, exit subroutine
@@ -338,6 +336,7 @@ data_reg        move.w  sr, -(sp) * save CCR to stack
                 movem.l rl_data_reg, -(sp) * save current regs to stack
 * ---- subroutine code:
                 
+                clr     d1
                 move.b  d7, d1          *Save the contents of original val in a temp registry
                 and.b   #%111000, d7    *if the first 3 bits is 000 it will save 000000
                 cmp     #%0, d7         *if 0 then we have a data register addressing mode
@@ -414,7 +413,7 @@ addr_reg        move.w  sr, -(sp)    * save CCR to stack
                 movem.l rl_addr_reg, -(sp) * save current regs to stack
 * ---- subroutine code:
                 
-                move.b  d7, d1          *Save the contents in a temp registry
+                move.l  d7, d1          *Save the contents in a temp registry
                 and.b   #%111000, d7    *mask opmode to expected opmode
                 cmp     #%001000, d7    *check mask result to make its expected
                 bne     addr_reg_x      *if not expected, exit subroutine
@@ -824,79 +823,79 @@ reset_printer_x movem.l (sp)+, rl_reset_printer * restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
 
-*-----------------------------------------------------------
-* //// print long (32 bits) as hex digit
-* parameters:
-*   d1 - contains word to print as hex
-* return:
-*   none
-*
-rl_print_hex_l  reg     a0-a6/d0-d7
-print_hex_l     move.w  sr, -(sp)
-                movem.l rl_print_hex_l, -(sp)
-* ---- subroutine code:
-                
-                swap    d1              *flip long or else it prints in reverse
-                bsr     print_hex_w     *print first half of long
-                swap    d1              *flip first half of register to second half
-                bsr     print_hex_w     *print rest of long
-                
-* ---- exit
-print_hex_l_x   movem.l (sp)+, rl_print_hex_l
-                rtr
-*-----------------------------------------------------------                
+**-----------------------------------------------------------
+** //// print long (32 bits) as hex digit
+** parameters:
+**   d1 - contains word to print as hex
+** return:
+**   none
+**
+*rl_print_hex_l  reg     a0-a6/d0-d7
+*print_hex_l     move.w  sr, -(sp)
+*                movem.l rl_print_hex_l, -(sp)
+** ---- subroutine code:
+*                
+*                swap    d1              *flip long or else it prints in reverse
+*                bsr     print_hex_w     *print first half of long
+*                swap    d1              *flip first half of register to second half
+*                bsr     print_hex_w     *print rest of long
+*                
+** ---- exit
+*print_hex_l_x   movem.l (sp)+, rl_print_hex_l
+*                rtr
+**-----------------------------------------------------------                
 
-*-----------------------------------------------------------
-* //// print word (16 bits) as hex digit
-* parameters:
-*   d1 - contains word to print as hex
-* return:
-*   none
-*
-rl_print_hex_w  reg     a0-a6/d0-d7
-print_hex_w     move.w  sr, -(sp)
-                movem.l rl_print_hex_w, -(sp)
-* ---- subroutine code:
-                
-                rol.w   #$4, d1 * rotate first 4 bits to last 4 bits
-                bsr     print_hex_n
-                rol.w   #$4, d1
-                bsr     print_hex_n
-                rol.w   #$4, d1
-                bsr     print_hex_n
-                rol.w   #$4, d1
-                bsr     print_hex_n
-                
-* ---- exit
-print_hex_w_x   movem.l (sp)+, rl_print_hex_w
-                rtr
-*-----------------------------------------------------------
+**-----------------------------------------------------------
+** //// print word (16 bits) as hex digit
+** parameters:
+**   d1 - contains word to print as hex
+** return:
+**   none
+**
+*rl_print_hex_w  reg     a0-a6/d0-d7
+*print_hex_w     move.w  sr, -(sp)
+*                movem.l rl_print_hex_w, -(sp)
+** ---- subroutine code:
+*                
+*                rol.w   #$4, d1 * rotate first 4 bits to last 4 bits
+*                bsr     print_hex_n
+*                rol.w   #$4, d1
+*                bsr     print_hex_n
+*                rol.w   #$4, d1
+*                bsr     print_hex_n
+*                rol.w   #$4, d1
+*                bsr     print_hex_n
+*                
+** ---- exit
+*print_hex_w_x   movem.l (sp)+, rl_print_hex_w
+*                rtr
+**-----------------------------------------------------------
 
-*-----------------------------------------------------------
-* //// print nibble (4 bits) as hex digit
-* parameters:
-*   d1 - contains nibble to print as hex
-* return:
-*   none
-*
-rl_print_hex_n  reg     a0-a6/d0-d7
-print_hex_n     move.w  sr, -(sp)
-                movem.l rl_print_hex_n, -(sp)
-* ---- subroutine code:
-                
-                andi.b  #%00001111, d1 * clear first 4 bits
-                addi.b  #$30, d1 * ASCII offset to start at char 0
-                cmpi.b  #$39, d1 * check if above ASCII $39
-                ble     pr_hn_skip1 * hex $0-9 can be safely printed
-                addi.b  #$7, d1 * hex $A-F needs another ASCII offset
-                
-pr_hn_skip1     move.b  #6, d0 * display char at d1.b
-                trap    #15
-                
-* ---- exit
-print_hex_n_x   movem.l (sp)+, rl_print_hex_n
-                rtr
-*-----------------------------------------------------------
+**-----------------------------------------------------------
+** //// print nibble (4 bits) as hex digit
+** parameters:
+**   d1 - contains nibble to print as hex
+** return:
+**   none
+**
+*rl_print_hex_n  reg     a0-a6/d0-d7
+*print_hex_n     move.w  sr, -(sp)
+*                movem.l rl_print_hex_n, -(sp)
+** ---- subroutine code:
+*                
+*                andi.b  #%00001111, d1 * clear first 4 bits
+*                addi.b  #$30, d1 * ASCII offset to start at char 0
+*                cmpi.b  #$39, d1 * check if above ASCII $39
+*                ble     pr_hn_skip1 * hex $0-9 can be safely printed
+*                addi.b  #$7, d1 * hex $A-F needs another ASCII offset
+*                
+*pr_hn_skip1     move.b  #6, d0 * display char at d1.b
+*                trap    #15
+*                
+** ---- exit
+*print_hex_n_x   movem.l (sp)+, rl_print_hex_n
+*                rtr
+**-----------------------------------------------------------
 
 *-----------------------------------------------------------
 * //// print comma
@@ -1018,7 +1017,7 @@ printer_tests    move.w  sr, -(sp) * save CCR to stack
 *    move.b  #1, d5
 *    bsr     printer
 *    
-*    bsr     reset_printer
+*    bsr     reset_printer 
 *    move.b  #%001001, d7
 *    move.b  #%001000, d6
 *    move.b  #1, d5
@@ -1222,8 +1221,6 @@ printer_tests_x   		movem.l (sp)+, rl_printer_tests * restore old registers
 *-----------------------------------------------------------
 
 * Put variables and constants here
-CR  EQU     $0D
-LF  EQU     $0A
 
 *direct data registers print
 direct_data_0 dc.b    'd0', 0
@@ -1279,11 +1276,18 @@ decrmnt_addr_7 dc.b  '-(a7)', 0
 pound_sign     dc.b  '#', 0
 dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
-space          dc.b  ' ', 0
+*space          dc.b  ' ', 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
 
-    END    START        ; last line of source
+
+
+
+
+
+
+
+
 
 
 
