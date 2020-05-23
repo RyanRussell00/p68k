@@ -8,35 +8,6 @@ The printer takes a 6 bit binary string that has the Addressing Mode and Address
 It redirects to the correct subroutine, and the correct subroutine handles printing.
 Invalid modes/registers print `XX` to the screen.
 
-#ADD:
-*MC68000 Instruction Set Summary*
-
-Bits 11-9 are the register
-Bits 6-8 are the OPMODE (size and direction).
-Bit 8 specifies direction.
-
-You can not have:
-`Dn + <ea> -> <ea>` where `<ea>` is a `Dn`
-To do `Dn + Dn` we use the Opmode 1:
-`<ea> + Dn -> Dn`
-
-If we are using Opmode 0, bits 11-9 are the destination register; and bits 5-0 are the source.
-
-If we are using Opmode 1, bits 11-9 are the source; and bits 5-0 are destination.
-
-We can also look at the entire opmode (bits 8-6) if we need to know the size of the operation.
-
-##To Print ADD:
-1. Check bit 8 to see the direction.
-
-2. If bit 8 is 0, then we look at bits 0-5 to get the source. Print the source.
-
-3. Look at bits 9-11 to print the destination register.
-
-4. If bit 8 is 1, we look at bits 11-9 to print the source. Print the source.
-
-5. Look at bits 5-0 to print the destination.
-
 ##Notes
 
 In A0, we move the address of the memory word we are dealing with.
@@ -48,9 +19,7 @@ If we see immediate data or absolute address, look at memory + 2 to get the memo
 - How are we printing BRA?
 
 ###Todo
-- Gonna need to figure out how to print MOVEM
-	- We can just load the adddress of the OPCODE into A0, call the printer -> call movem_printer -> the printer will do A0 + 2
-		get the word, and print it -> then look at D1/D0 for the destination/source and print that as well
--MOVEM printer:
-	- Check if NOT on bit 16, print slash
+- ADD Printer (maybe opcode detector handles this?)
 - BRA Printer
+- BCC Printer
+- MOVEQ Printer
