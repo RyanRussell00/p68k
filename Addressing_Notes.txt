@@ -19,7 +19,7 @@ If we see immediate data or absolute address, look at memory + 2 to get the memo
 - How are we printing BRA?
 
 ###Todo
-- ADD Printer (maybe opcode detector handles this?)
 - BRA Printer
 - BCC Printer
 - MOVEQ Printer
+- If EA mode is not supported print "Incorrect EA mode"
