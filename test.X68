@@ -8,9 +8,23 @@ test_org    equ     $5000
 
 * testing codes
 test_start  nop
+
+            * Test for ea printer
+            moveq   #1, d0
+            moveq   #0000, d6
+            moveq   #255, d7
+            moveq   #152, d0
+
+            
+*             movem.w a0-a5, -(a6)
+*            movem.l (a6)+, a0-a7/d0-d7
+*            movem.w a0-a7/d0-d7, -(a0)
+*            movem.w d7, -(a3)
+*            movem.w a0-a7/d0-d7, -(a6)
+            
             
             * group 1
-            move.b  d1, d2
+            move.b  d0, d1
             
             * group 2
             move.l  d0, d1
@@ -22,7 +36,7 @@ test_start  nop
             
             * group 4
             nop
-            movem.w a0-a3/d1-d4, (a6)
+            movem.w a0-a3/d1-d4, -(a6)
             lea     (a0), a1
             not.b   d0
             jsr     (a0)
@@ -98,6 +112,8 @@ test_start  nop
             nop
             
 test_end    nop
+
+
 
 
 *~Font name~Courier New~

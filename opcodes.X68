@@ -59,11 +59,39 @@ op_move         move.w  sr, -(sp)
                 movem.l reglist_move, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_move, a1
                 trap    #15
                 
-                addq    #$2, a0
+                *print addressing modes
+                
+                *get destination. EA Printer parameters expect Mode then Register
+                move.w  (a0), d1    *load instruction into data reg
+                clr     d6
+                clr     d2          *temp register
+                move.w  d1, d6      *prepare destination parameter
+                move.w  d1, d2      *copy to temp register
+                and.l   #%0000000111000000, d6  *clear everything but destination mode
+                lsr     #3, d6      *shift right to move the destination mode 3 from the end
+                and.l   #%0000111000000000, d2  *get destination register
+                move.l  #9, d3
+                lsr     d3, d2      *shift right to get destination register at end
+                add     d2, d6      *combine destination mode and regiser
+                
+                *get source EA
+                clr     d7
+                move.w  d1, d7      *load instruction into source EA parameter
+                and     #%0000000000111111, d7  *get source ea
+                
+                *At this point: d7 contains source EA and d6 contains destination EA
+                *we set d5 = 1 since we have to print destination and source
+                move.l  #1, d5
+                
+                bsr     printer     *execute EA printer
+                
+                bsr     print_nl     *print line break
+                
+                addq    #$2, a0     *go to next opcode word
 * ---- exit                
 op_move_x       movem.l (sp)+, reglist_move
                 rtr
@@ -80,9 +108,21 @@ op_moveq        move.w  sr, -(sp)
                 movem.l reglist_moveq, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_moveq, a1
                 trap    #15
+                
+                bsr     print_space
+                
+                *get data register number
+                clr     d7
+                move.w  (a0), d7
+                andi    #%0000111000000000, d7
+                rol.w   #7, d7  *rotate to left to get register number at end
+              
+                bsr     moveq_printer
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -101,11 +141,28 @@ op_movem        move.w  sr, -(sp)
                 movem.l reglist_movem, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_movem, a1
                 trap    #15
                 
-                addq    #$2, a0
+                clr     d7      *ea printer parameter for ea
+                clr     d1      *temp register
+                move.w  (a0), d1
+                *mask to get effective addressing mode
+                move.l  d1, d7  *set parameter
+                and     #%0000000000111111, d7  *mask to get ea of movem
+                
+                *get direction
+                clr     d6      *direction parameter
+                move.l  d1, d6
+                and     #%0000010000000000, d6  *mask to get direction
+                rol     #6, d6  *rotate left 6 times to get direction at the end     
+
+                bsr     movem_printer
+                
+                bsr     print_nl *print line break
+                
+                addq    #$4, a0 *add 4 to skip after data word
 * ---- exit                
 op_movem_x      movem.l (sp)+, reglist_movem
                 rtr
@@ -122,9 +179,34 @@ op_movea        move.w  sr, -(sp)
                 movem.l reglist_movea, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_movea, a1
                 trap    #15
+                
+                *print addressing modes
+                
+                *get destination. EA Printer parameters expect Mode then Register
+                move.w  (a0), d1    *load instruction into data reg
+                clr     d2          *temp
+                move.l  #%001000, d6 *set destination mode to address register
+                move.w  d1, d2     
+                and.l   #%0000111000000000, d2  *clear everything but destination register
+                move.l  #9, d3
+                lsr     d3, d2      *shift right to get destination register at end
+                add     d2, d6      *combine destination mode and regiser
+                
+                *get source EA
+                clr     d7
+                move.w  d1, d7      *load instruction into source EA parameter
+                and     #%0000000000111111, d7  *get source ea
+                
+                *At this point: d7 contains source EA and d6 contains destination EA
+                *we set d5 = 1 since we have to print destination and source
+                move.l  #1, d5
+                
+                bsr     printer     *execute EA printer
+                
+                bsr     print_nl    *print line break
                 
                 addq    #$2, a0
 * ---- exit                
@@ -447,6 +529,12 @@ msg_bcc         dc.b    'Bcc',0
 msg_jsr         dc.b    'JSR',0
 msg_rts         dc.b    'RTS',0
 msg_bra         dc.b    'BRA',0
+
+* ==== included files ====
+                include "addressing.X68"
+
+
+
 
 
 
