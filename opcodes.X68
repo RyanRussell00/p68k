@@ -89,6 +89,8 @@ op_move         move.w  sr, -(sp)
                 
                 bsr     printer     *execute EA printer
                 
+                bsr     print_nl     *print line break
+                
                 addq    #$2, a0     *go to next opcode word
 * ---- exit                
 op_move_x       movem.l (sp)+, reglist_move
@@ -106,9 +108,21 @@ op_moveq        move.w  sr, -(sp)
                 movem.l reglist_moveq, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_moveq, a1
                 trap    #15
+                
+                bsr     print_space
+                
+                *get data register number
+                clr     d7
+                move.w  (a0), d7
+                andi    #%0000111000000000, d7
+                rol.w   #7, d7  *rotate to left to get register number at end
+              
+                bsr     moveq_printer
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -127,11 +141,28 @@ op_movem        move.w  sr, -(sp)
                 movem.l reglist_movem, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_movem, a1
                 trap    #15
                 
-                addq    #$2, a0
+                clr     d7      *ea printer parameter for ea
+                clr     d1      *temp register
+                move.w  (a0), d1
+                *mask to get effective addressing mode
+                move.l  d1, d7  *set parameter
+                and     #%0000000000111111, d7  *mask to get ea of movem
+                
+                *get direction
+                clr     d6      *direction parameter
+                move.l  d1, d6
+                and     #%0000010000000000, d6  *mask to get direction
+                rol     #6, d6  *rotate left 6 times to get direction at the end     
+
+                bsr     movem_printer
+                
+                bsr     print_nl *print line break
+                
+                addq    #$4, a0 *add 4 to skip after data word
 * ---- exit                
 op_movem_x      movem.l (sp)+, reglist_movem
                 rtr
@@ -174,6 +205,8 @@ op_movea        move.w  sr, -(sp)
                 move.l  #1, d5
                 
                 bsr     printer     *execute EA printer
+                
+                bsr     print_nl    *print line break
                 
                 addq    #$2, a0
 * ---- exit                
@@ -499,6 +532,7 @@ msg_bra         dc.b    'BRA',0
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 

@@ -1,16 +1,7 @@
 *-----------------------------------------------------------
 * Title      : Addressing Mode Detect
-* Description: Detects the addressing mode and prints it to screen
+* Descr iption: Detects the addressing mode and prints it to screen
 *-----------------------------------------------------------
-   
-* ORG    $1000
-*START:                  ; first instruction of program
-*
-** Put program code here
-
-    jsr     printer_tests   *start tests for the ea printer
-    
-*    SIMHALT             ; halt simulator
                 
 *-----------------------------------------------------------
 * //// Given a 6 bit op string it directs it to the correct printer. DOES NOT PRINT MOVEM.
@@ -52,7 +43,7 @@ is_addr         cmp.l   #%001000, d2 *address register
                 bra     printer_x
                 
 is_ind_addr     cmp.l   #%010000, d2 *indirect address register
-                bne     is_incrmnt  *if not equal, try next
+                bne     is_incrmnt   *if not equal, try next
                 bsr     ind_addr_reg
                 bra     printer_x
                 
@@ -90,10 +81,7 @@ printer_loop    *Check if we have second EA to print
 * ---- exit        
 printer_x   	   
                 cmpi    #1, d5          *if d5 is 1 we have another ea to print
-                beq     printer_loop
-                
-                *print line break
-                bsr     print_nl        
+                beq     printer_loop        
 
                 movem.l (sp)+, rl_printer *restore old registers
                 rtr * restore CCR, exit subroutine
@@ -122,12 +110,14 @@ mem_to_reg
                 clr      d5
                 bsr      printer
                 bsr      print_comma
+                bsr      print_space
                 bra      print_registers_list
 
 reg_to_mem
                 *print register list first followed by register to save in
                 clr     d3
                 move.l  #1, d3          *set a flag to print the memory after printing register list
+                bsr     print_space
                 bra     print_registers_list *print reg list first
                 
 print_registers_list
@@ -169,14 +159,14 @@ no_slash
                 bra     print_reg   *repeat loop
            
 print_mem       
-                clr     d3
+                clr     d4
                 clr     d5  *set d5 to 0 so printer doesnt print source
                 bsr     print_comma
                 bsr     printer
                 bra     movem_printer_x     
 * ---- exit
 movem_printer_x 
-                cmpi    #1,d3       *check if flag is set for printing memory
+                cmpi    #1,d4       *check if flag is set for printing memory
                 beq     print_mem
                 movem.l (sp)+, rl_movem_printer
                 rtr
@@ -324,6 +314,44 @@ reg_list_printer_x
                 movem.l (sp)+, rl_reg_list_printer
                 rtr
 *-----------------------------------------------------------
+
+*-----------------------------------------------------------
+* //// Prints immediate data as decimal
+* parameters:
+*   d7 - 6 bit data register mode and register number (must always be Data Register) 
+*   a0 - address of instruction
+* return:
+*   prints to screen the decimal value of the hex value
+
+rl_moveq_printer       reg     a1-a6/d0-d6      * every reg except parameters/return
+moveq_printer   move.w  sr, -(sp)        * save CCR to stack
+                movem.l rl_moveq_printer, -(sp) * save current regs to stack
+* ---- subroutine code:
+                               
+                lea     pound_sign, a1  *load the pound sign to print
+                move.b  #14, d0         *set trap
+                trap    #15             *print to screen
+                
+                lea     dollar_sign, a1 *print hex dollar sign
+                move.b  #14, d0 
+                trap    #15        
+
+                clr     d1
+                move.w  (a0), d1 *move instruction into register
+                andi    #%0000000011111111, d1
+                *since we get a byte, we only get the data (8 bits) at the front
+                bsr     print_hex_w     *print value as hex word  
+                
+                bsr     print_comma
+                bsr     print_space
+                
+                *print data register
+                bsr     data_reg
+                
+* ---- exit        
+moveq_printer_x   		movem.l (sp)+, rl_moveq_printer *restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
     
 *-----------------------------------------------------------
 * //// Read data register addressing mode
@@ -336,8 +364,7 @@ data_reg        move.w  sr, -(sp) * save CCR to stack
                 movem.l rl_data_reg, -(sp) * save current regs to stack
 * ---- subroutine code:
                 
-                clr     d1
-                move.b  d7, d1          *Save the contents of original val in a temp registry
+                move.l  d7, d1          *Save the contents of original val in a temp registry
                 and.b   #%111000, d7    *if the first 3 bits is 000 it will save 000000
                 cmp     #%0, d7         *if 0 then we have a data register addressing mode
                 bne     data_reg_x      *if first 3 bits not 000, exit subroutine
@@ -489,7 +516,7 @@ ind_addr_reg    move.w  sr, -(sp)    * save CCR to stack
                 movem.l rl_ind_addr_reg, -(sp) * save current regs to stack
 * ---- subroutine code:
                 
-                move.b  d7, d1          *Save the contents of d0 in a temp registry
+                move.l  d7, d1          *Save the contents of d0 in a temp registry
                 and.b   #%111000, d7    *mask opmode to expected opmode
                 cmp     #%010000, d7    *check mask result to make its expected
                 bne     ind_addr_reg_x      *if not expected, exit subroutine
@@ -565,7 +592,7 @@ inc_addr_reg    move.w  sr, -(sp)    * save CCR to stack
                 movem.l rl_inc_addr_reg, -(sp) * save current regs to stack
 * ---- subroutine code:
                 
-                move.b  d7, d1          *Save the contents of d0 in a temp registry
+                move.l  d7, d1          *Save the contents of d0 in a temp registry
                 and.b   #%111000, d7    *mask opmode to expected opmode
                 cmp     #%011000, d7    *check mask result to make its expected
                 bne     inc_addr_reg_x      *if not expected, exit subroutine
@@ -641,7 +668,7 @@ dec_addr_reg    move.w  sr, -(sp)    * save CCR to stack
                 movem.l rl_dec_addr_reg, -(sp) * save current regs to stack
 * ---- subroutine code:
                 
-                move.b  d7, d1          *Save the contents of d0 in a temp registry
+                move.l  d7, d1          *Save the contents of d0 in a temp registry
                 and.b   #%111000, d7    *mask opmode to expected opmode
                 cmp     #%100000, d7    *check mask result to make its expected
                 bne     dec_addr_reg_x      *if not expected, exit subroutine
@@ -948,7 +975,7 @@ printer_tests    move.w  sr, -(sp) * save CCR to stack
     *Tests for MOVEM
     bsr     reset_printer
     move    #%100000, d7        *EA = -(a0)
-    move.l  #0,d6              *direction = mem to reg
+    move.l  #0,d6              *direction = reg to mem
     move.l  #$48A0E000, (a0)   *Registers = D0/D1/D2
     bsr     movem_printer    
 
@@ -1279,6 +1306,7 @@ break          dc.b  CR, LF, 0
 *space          dc.b  ' ', 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 
