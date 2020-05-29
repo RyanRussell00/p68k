@@ -12,6 +12,9 @@ start:
 
 * ==== program code ====
                 
+                bsr     print_logo
+                bsr     print_nl
+                
 * Take user input for start and end address
                 jsr     get_user_input
                 
@@ -62,7 +65,7 @@ wait_user       move.w  sr, -(sp)
 * ---- subroutine code:
                 
                 move.b  #14, d0 * print null-term string without CR, LF
-                lea     (msg_wait), a1
+                lea     msg_wait, a1
                 trap    #15
                 
                 move.b  #5, d0 * read character from keyboard
@@ -184,6 +187,68 @@ pr_hn_skip1     move.b  #6, d0 * display char at d1.b
 print_hex_n_x   movem.l (sp)+, rl_print_hex_n
                 rtr
 
+*-----------------------------------------------------------
+* //// print Team 68++ logo
+* parameters:
+*   none
+* return:
+*   none
+*
+rl_print_logo   reg     a0-a6/d0-d7
+print_logo      move.w  sr, -(sp)
+                movem.l rl_print_logo, -(sp)
+* ---- subroutine code:
+                
+                move.b  #21, d0 * change font color
+                move.l  #$000000FF, d1 * red
+                trap    #15
+                move.b  #13, d0
+                lea     logo_1, a1
+                trap    #15
+                
+                move.b  #21, d0
+                move.l  #$0000A5FF, d1 * orange
+                trap    #15
+                move.b  #13, d0
+                lea     logo_2, a1
+                trap    #15
+                
+                move.b  #21, d0
+                move.l  #$0000FFFF, d1 * yellow
+                trap    #15
+                move.b  #13, d0
+                lea     logo_3, a1
+                trap    #15
+                
+                move.b  #21, d0
+                move.l  #$0000FF00, d1 * green
+                trap    #15
+                move.b  #13, d0
+                lea     logo_4, a1
+                trap    #15
+                
+                move.b  #21, d0
+                move.l  #$00FF0000, d1 * blue
+                trap    #15
+                move.b  #13, d0
+                lea     logo_5, a1
+                trap    #15
+                
+                move.b  #21, d0
+                move.l  #$00800080, d1 * purple
+                trap    #15
+                move.b  #13, d0
+                lea     logo_6, a1
+                trap    #15
+                
+                move.b  #21, d0
+                move.l  #$00FFFFFF, d1 * reset to white
+                trap    #15
+                
+* ---- exit
+print_logo_x    movem.l (sp)+, rl_print_logo
+                rtr
+
 * ==== included files ====
                 include "user.X68"
                 include "detect.X68"
@@ -191,7 +256,7 @@ print_hex_n_x   movem.l (sp)+, rl_print_hex_n
 
 * ==== constants and variables =====
 
-num_first_lines equ     2 * num of lines printed before the main loop
+num_first_lines equ     0 * num of lines printed before the main loop
 screen_limit    equ     31 * lines that can fit on the screen
 
 msg_wait        dc.w    'Press any key to continue... ',0
@@ -210,6 +275,13 @@ input_inc_pt5   dc.w    '): ',0
 input_s         dc.w    'start',0
 input_e         dc.w    'end',0
 
+logo_1          dc.w    '  _______                       __   ___',0
+logo_2          dc.w    ' |__   __|                     / /  / _ \  _     _',0
+logo_3          dc.w    '    | | ___  __ _ _ __ ___    / /_ | (_) || |_ _| |_',0
+logo_4          dc.w    '    | |/ _ \/ _` | `_ ` _ \  | `_ \ > _ <_   _|_   _|',0
+logo_5          dc.w    '    | |  __/ (_| | | | | | | | (_) | (_) ||_|   |_|',0
+logo_6          dc.w    '    |_|\___|\__,_|_| |_| |_|  \___/ \___/ ',0
+
 CR              equ     $0d
 LF              equ     $0a
 HT              equ     $09
@@ -225,6 +297,7 @@ indent          dc.w    HT,HT,0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 
