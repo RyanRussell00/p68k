@@ -1,6 +1,6 @@
 *-----------------------------------------------------------
 * Title      : Addressing Mode Detect
-* Descr iption: Detects the addressing mode and prints it to screen
+* Description: Detects the addressing mode and prints it to screen
 *-----------------------------------------------------------
                 
 *-----------------------------------------------------------
@@ -1306,6 +1306,7 @@ break          dc.b  CR, LF, 0
 *space          dc.b  ' ', 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 

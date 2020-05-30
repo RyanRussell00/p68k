@@ -2,6 +2,27 @@
 * Subroutines to handle every opcode.
 *
 
+* ==== validation subroutines ====
+
+*-----------------------------------------------------------
+* //// validate EA mode against opcode
+* parameters:
+*   d5 - EA mode (bits 3-5) and register (bits 0-2)
+*   d6 - byte for EA mode mask, lists all allowed EA modes
+* return:
+*   d7 - byte is $0 if valid, anything else if invalid
+*
+rl_v_ea         reg     a1-a6/d0-d4
+valid_ea        move.w  sr, -(sp)
+                movem.l rl_v_ea, -(sp)
+* ---- subroutine code:
+                
+                
+                
+* ---- exit        
+valid_ea_x      movem.l (sp)+, rl_v_ea
+                rtr
+
 * ==== opcode subroutines ====
 
 *-----------------------------------------------------------
@@ -509,29 +530,67 @@ op_bra_x        movem.l (sp)+, reglist_bra
 
 * ==== constants and variables ====
 
-msg_data        dc.b    'DATA',0
-msg_nop         dc.b    'NOP',0
-msg_move        dc.b    'MOVE',0
-msg_moveq       dc.b    'MOVEQ',0
-msg_movem       dc.b    'MOVEM',0
-msg_movea       dc.b    'MOVEA',0
-msg_add         dc.b    'ADD',0
-msg_adda        dc.b    'ADDA',0
-msg_addq        dc.b    'ADDQ',0
-msg_sub         dc.b    'SUB',0
-msg_lea         dc.b    'LEA',0
-msg_and         dc.b    'AND',0
-msg_or          dc.b    'OR',0
-msg_not         dc.b    'NOT',0
-msg_xsd         dc.b    'xSd',0
-msg_rod         dc.b    'ROd',0
-msg_bcc         dc.b    'Bcc',0
-msg_jsr         dc.b    'JSR',0
-msg_rts         dc.b    'RTS',0
-msg_bra         dc.b    'BRA',0
+* messages
+msg_data        dc.w    'DATA',0
+msg_nop         dc.w    'NOP',0
+msg_move        dc.w    'MOVE',0
+msg_moveq       dc.w    'MOVEQ',0
+msg_movem       dc.w    'MOVEM',0
+msg_movea       dc.w    'MOVEA',0
+msg_add         dc.w    'ADD',0
+msg_adda        dc.w    'ADDA',0
+msg_addq        dc.w    'ADDQ',0
+msg_sub         dc.w    'SUB',0
+msg_lea         dc.w    'LEA',0
+msg_and         dc.w    'AND',0
+msg_or          dc.w    'OR',0
+msg_not         dc.w    'NOT',0
+msg_xsd         dc.w    'xSd',0
+msg_rod         dc.w    'ROd',0
+msg_bcc         dc.w    'Bcc',0
+msg_jsr         dc.w    'JSR',0
+msg_rts         dc.w    'RTS',0
+msg_bra         dc.w    'BRA',0
+
+* EA validation list style, byte bits 7->0:
+*   bit 7: Dn
+*   bit 6: An
+*   bit 5: (An)
+*   bit 4: (An)+
+*   bit 3: -(An)
+*   bit 2: abs.W
+*   bit 1: abs.L
+*   bit 0: #imm
+
+* EA validation source lists
+ea_move_s       dc.b    %11111111
+ea_movea_s      dc.b    %11111111
+ea_movem_s      dc.b    %00110110
+ea_lea_s        dc.b    %00100110
+ea_not_s        dc.b    %10111110
+ea_jsr_s        dc.b    %00100110
+ea_or_s         dc.b    %10111111
+ea_sub_s        dc.b    %11111111
+ea_and_s        dc.b    %10111111
+ea_add_s        dc.b    %11111111
+ea_adda_s       dc.b    %11111111
+
+* EA validation destination lists
+ea_move_d       dc.b    %10111110
+ea_movem_d      dc.b    %00101110
+ea_addq_d       dc.b    %11111110
+ea_or_d         dc.b    %10111110
+ea_sub_d        dc.b    %10111110
+ea_and_d        dc.b    %10111110
+ea_add_d        dc.b    %10111110
+ea_lsd_d        dc.b    %10111110
+ea_asd_d        dc.b    %10111110
+ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
+
 
 
 
