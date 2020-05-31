@@ -323,9 +323,19 @@ op_addq         move.w  sr, -(sp)
                 movem.l reglist_addq, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_addq, a1
                 trap    #15
+                
+                bsr     print_space
+                
+                clr     d7
+                move.w  (a0), d7
+                andi    #%0000000000111111, d7
+                
+                bsr     addq_printer
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                

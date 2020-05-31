@@ -22,9 +22,7 @@ start_printer
                 clr     d2          *clear everything in the temp register
                 
                 *print space
-                lea     space, a1
-                move.b  #14, d0
-                trap    #15
+                bsr     print_space
                 
                 *since the original value is untouched, whatever subroutine we call gets the original param
                 move.l  d7, d2      *move the parameter into temp register
@@ -322,12 +320,12 @@ reg_list_printer_x
 *-----------------------------------------------------------
 
 *-----------------------------------------------------------
-* //// Prints immediate data as decimal
+* //// Prints MOVEQ EA
 * parameters:
 *   d7 - 6 bit data register mode and register number (must always be Data Register) 
 *   a0 - address of instruction
 * return:
-*   prints to screen the decimal value of the hex value
+*   prints to screen the hex value
 
 rl_moveq_printer       reg     a1-a6/d0-d6      * every reg except parameters/return
 moveq_printer   move.w  sr, -(sp)        * save CCR to stack
@@ -345,7 +343,7 @@ moveq_printer   move.w  sr, -(sp)        * save CCR to stack
                 clr     d1
                 move.w  (a0), d1 *move instruction into register
                 andi    #%0000000011111111, d1
-                *since we get a byte, we only get the data (8 bits) at the front
+                
                 bsr     print_hex_w     *print value as hex word  
                 
                 bsr     print_comma
@@ -356,6 +354,51 @@ moveq_printer   move.w  sr, -(sp)        * save CCR to stack
                 
 * ---- exit        
 moveq_printer_x   		movem.l (sp)+, rl_moveq_printer *restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
+
+*-----------------------------------------------------------
+* //// Prints ADDQ EA
+* parameters:
+*   d7 - 6 bit data register mode and register number
+*   a0 - address of instruction
+* return:
+*   prints to screen the decimal value of the hex value
+
+rl_addq_printer       reg     a1-a6/d0-d6      * every reg except parameters/return
+addq_printer    move.w  sr, -(sp)        * save CCR to stack
+                movem.l rl_addq_printer, -(sp) * save current regs to stack
+* ---- subroutine code:
+                               
+                lea     pound_sign, a1  *load the pound sign to print
+                move.b  #14, d0         *set trap
+                trap    #15             *print to screen
+                
+                clr     d1
+                clr     d6
+                move.w  (a0), d1    *move instruction into register
+                andi    #%0000111000000000, d1
+                rol     #7, d1      *rotate to get value at end
+                
+                *If  0 we print 8
+                cmpi    #000, d1
+                bne     print_addq
+                *print 8 as decimal
+                move.l  #8, d1
+print_addq
+                move.b  #15, d0
+                move.b  #10, d2 *base 10
+                trap    #15    
+                
+                bsr     print_comma
+                
+                *print destination EA
+                clr d5 *prevent printing source and destination
+                bsr     printer
+                
+                
+* ---- exit        
+addq_printer_x   		movem.l (sp)+, rl_addq_printer *restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
     
