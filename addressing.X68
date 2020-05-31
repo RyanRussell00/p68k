@@ -70,8 +70,14 @@ is_abs_w        cmp.l   #%111000, d2 *absolute word
                 bra     printer_x
 
 is_abs_l        cmp.l   #%00111001, d2 *absolute long
-                bne     printer_x
+                bne     invalid_ea
                 bsr     abs
+                
+invalid_ea     
+               lea     invalid, a1 *load message for invalid
+               move.b  #14, d0     
+               trap    #15         *print to screen
+               bra     printer_x
 
 printer_loop    *Check if we have second EA to print
                 clr     d5          *clear d5 to prevent infinite loop
@@ -1247,7 +1253,7 @@ printer_tests_x   		movem.l (sp)+, rl_printer_tests * restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
 
-* Put variables and constants here
+invalid     dc.b    'BAD EA', 0
 
 *direct data registers print
 direct_data_0 dc.b    'd0', 0
@@ -1302,10 +1308,12 @@ decrmnt_addr_7 dc.b  '-(a7)', 0
 *Immediate values prints
 pound_sign     dc.b  '#', 0
 dollar_sign    dc.b  '$', 0
+*Utility
 break          dc.b  CR, LF, 0
-*space          dc.b  ' ', 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
+
 
 
 

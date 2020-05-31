@@ -9,6 +9,11 @@ test_org    equ     $5000
 * testing codes
 test_start  nop
 
+            adda    a0, a1
+            adda    $1,  a1
+            adda    #45, a1
+            adda    (a6), a3
+               
             * Test for ea printer
             moveq   #1, d0
             moveq   #0000, d6
@@ -112,6 +117,8 @@ test_start  nop
             nop
             
 test_end    nop
+
+
 
 
 

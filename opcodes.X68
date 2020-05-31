@@ -225,9 +225,44 @@ op_add          move.w  sr, -(sp)
                 movem.l reglist_add, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_add, a1
                 trap    #15
+                
+                *if direction is 0, the Dn is destination
+                clr     d1  *temp
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d7
+                andi.l  #%0000111000000000, d7
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d7
+                
+                *get EA bits 0-5
+                move.w  (a0), d6
+                andi.l  #%0000000000111111, d6
+                
+                *check direction
+                move.w  (a0), d1
+                andi.l  #%0000000100000000, d1 *mask to get direction
+                cmpi.l  #%0000000000000000, d1 *check if direction is 1
+                bne     print_add   *if not 1, go to print add
+                    
+direction_one   
+                *if direction is 1, flip d7 and d6
+                clr     d4
+                move.l  d7, d4
+                move.l  d6, d7
+                move.l  d4, d6
+                
+print_add       
+                bsr     printer
+                
+                bsr     print_nl    *print line break
                 
                 addq    #$2, a0
 * ---- exit                
@@ -246,9 +281,30 @@ op_adda         move.w  sr, -(sp)
                 movem.l reglist_adda, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_adda, a1
                 trap    #15
+                              
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d6
+                andi.l  #%0001111000000000, d6 *get the 3 bits of the address reg
+                * and the last bit of the instruction group to identify it as An
+                
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d6                
+                
+                *get EA bits 0-5
+                move.w  (a0), d7
+                andi.l  #%0000000000111111, d7
+
+                bsr     printer
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -532,6 +588,7 @@ msg_bra         dc.b    'BRA',0
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 
