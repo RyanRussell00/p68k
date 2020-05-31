@@ -8,20 +8,106 @@
 * //// validate EA mode against opcode
 * parameters:
 *   d5 - EA mode (bits 3-5) and register (bits 0-2)
-*   d6 - byte for EA mode mask, lists all allowed EA modes
+*   d6 - byte for EA mode list, lists all allowed EA modes
 * return:
-*   d7 - byte is $0 if valid, anything else if invalid
+*   d7 - byte is $FF if the EA mode is valid, $00 if invalid
 *
-rl_v_ea         reg     a1-a6/d0-d4
+rl_v_ea         reg     a0-a6/d0-d6
 valid_ea        move.w  sr, -(sp)
                 movem.l rl_v_ea, -(sp)
 * ---- subroutine code:
                 
+                andi.b  #%111111, d5 * keep only last 6 bits
                 
+                cmpi.b  #%111000, d5 * absolute word
+                beq     mode_abs_w
+                cmpi.b  #%111001, d5 * absolute long
+                beq     mode_abs_l
+                cmpi.b  #%111100, d5 * immediate data
+                beq     mode_imm
+                
+                lsr.b   #3, d5 * move EA mode to last 3 bits
+                
+                cmpi.b  #%000, d5 * datareg direct
+                beq     mode_dn
+                cmpi.b  #%001, d5 * addreg direct
+                beq     mode_an
+                cmpi.b  #%010, d5 * addreg indirect
+                beq     mode_ani
+                cmpi.b  #%011, d5 * addreg indirect with postinc
+                beq     mode_ani_psi
+                cmpi.b  #%100, d5 * addreg indirect with predec
+                beq     mode_ani_prd
+                
+                sf      d7 * set result to invalid
+                bra valid_ea_x * valid mode not found
+                
+mode_dn         lsl.b   #1, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_an         lsl.b   #2, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_ani        lsl.b   #3, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_ani_psi    lsl.b   #4, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_ani_prd    lsl.b   #5, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_abs_w      lsl.b   #6, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_abs_l      lsl.b   #7, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_imm        lsl.b   #8, d6
+                scs     d7
+                bra     valid_ea_x
                 
 * ---- exit        
 valid_ea_x      movem.l (sp)+, rl_v_ea
                 rtr
+
+*-----------------------------------------------------------
+* //// validate two EA modes at once, source and destination
+* parameters:
+*   d3 - source mode (bits 3-5) and register (bits 0-2)
+*   d4 - source mode list, byte
+*   d5 - destination mode (bits 3-5) and register (bits 0-2)
+*   d6 - destination mode list, byte
+* return:
+*   d7 - byte is $FF if both valid, $00 if either are invalid
+*
+rl_valid_both   reg     a0-a6/d0-d6
+valid_both      move.w  sr, -(sp)
+                movem.l rl_valid_both, -(sp)
+* ---- subroutine code:
+                
+                bsr     valid_ea * validate destination
+                move.b  d7, d0 * save first result
+                
+                move.b  d3, d5 * prepare source mode/reg
+                move.b  d4, d5 * prepare source mode list
+                
+                bsr     valid_ea * validate source
+                
+                * OR the results of both validations
+                or.b    d0, d7 * store result in d7
+                
+* ---- exit
+valid_both_x    movem.l (sp)+, rl_valid_both
+                rtr
+
 
 * ==== opcode subroutines ====
 
@@ -589,12 +675,6 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
-
-
-
-
-
-
 
 
 *~Font name~Courier New~
