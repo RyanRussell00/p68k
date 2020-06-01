@@ -70,12 +70,13 @@ is_abs_w        cmp.l   #%111000, d2 *absolute word
 is_abs_l        cmp.l   #%00111001, d2 *absolute long
                 bne     invalid_ea
                 bsr     abs
+                bra     printer_x
                 
 invalid_ea     
-               lea     invalid, a1 *load message for invalid
-               move.b  #14, d0     
-               trap    #15         *print to screen
-               bra     printer_x
+                lea     invalid, a1 *load message for invalid
+                move.b  #14, d0     
+                trap    #15         *print to screen
+                bra     printer_x    
 
 printer_loop    *Check if we have second EA to print
                 clr     d5          *clear d5 to prevent infinite loop

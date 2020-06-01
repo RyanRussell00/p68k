@@ -408,9 +408,29 @@ op_lea          move.w  sr, -(sp)
                 movem.l reglist_lea, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_lea, a1
                 trap    #15
+                
+                clr     d7
+                clr     d6
+                clr     d5
+                move.l  #1, d5 *set destination print = true
+                
+                *get source (bits 0 - 5)
+                move.w  (a0), d7
+                andi    #%0000000000111111, d7
+                
+                *get destination (bits 9-11)
+                *since it always address register we need to manually set reg mode
+                move.w  (a0), d6
+                andi    #%0000111000000000, d6
+                rol.w   #4, d6  *rotate to get the reg bits as MSB
+                add     #%1, d6 *add 1 to indicate An reg mode
+                rol.w   #3, d6  *rotate to get the reg bits as LSB
+                
+                bsr     printer
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
