@@ -251,8 +251,7 @@ op_add          move.w  sr, -(sp)
                 andi.l  #%0000000100000000, d1 *mask to get direction
                 cmpi.l  #%0000000000000000, d1 *check if direction is 1
                 bne     print_add   *if not 1, go to print add
-                    
-direction_one   
+                       
                 *if direction is 1, flip d7 and d6
                 clr     d4
                 move.l  d7, d4
@@ -357,6 +356,40 @@ op_sub          move.w  sr, -(sp)
                 move.b  #13, d0
                 lea     msg_sub, a1
                 trap    #15
+                
+                                *if direction is 0, the Dn is destination
+                clr     d1  *temp
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d7
+                andi.l  #%0000111000000000, d7
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d7
+                
+                *get EA bits 0-5
+                move.w  (a0), d6
+                andi.l  #%0000000000111111, d6
+                
+                *check direction
+                move.w  (a0), d1
+                andi.l  #%0000000100000000, d1 *mask to get direction
+                cmpi.l  #%0000000000000000, d1 *check if direction is 1
+                bne     print_sub   *if not 1, go to print add
+                       
+                *if direction is 1, flip d7 and d6
+                clr     d4
+                move.l  d7, d4
+                move.l  d6, d7
+                move.l  d4, d6
+                
+print_sub       
+                bsr     printer
+                
+                bsr     print_nl    *print line break
                 
                 addq    #$2, a0
 * ---- exit                

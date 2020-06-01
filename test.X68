@@ -9,6 +9,11 @@ test_org    equ     $5000
 * testing codes
 test_start  nop
 
+            sub     #1, d1
+            sub     d1, d2
+            sub     (a0), d5
+            sub     d3, (a5)
+
             addq    #5, d1
             addq    #2, (a1)
             addq    #3, $5
