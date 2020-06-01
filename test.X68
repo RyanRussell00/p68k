@@ -9,25 +9,41 @@ test_org    equ     $5000
 * testing codes
 test_start  nop
 
-            lea     $1234, a0
-            lea     $5555, a1
-            lea     $99999999, a5
-            lea     (a2), a6
-
-            sub     #1, d1
-            sub     d1, d2
-            sub     (a0), d5
-            sub     d3, (a5)
-
-            addq    #5, d1
-            addq    #2, (a1)
-            addq    #3, $5
-               
-            * Test for ea printer
-            moveq   #1, d0
-            moveq   #0000, d6
-            moveq   #255, d7
-            moveq   #152, d0
+            sub     d1, (a1)
+            sub     $12345555, d4
+            sub     d3, d4
+            sub     (a4), d3
+            sub     (a1)+, d1
+            sub     -(a3), d5
+            sub     $3321, d6
+            sub     d1, (a3)
+            sub     d3, (a2)+
+            sub     d4, -(a1)
+            sub     d7, $1234
+            sub     d4, $88881111
+            
+            
+            
+*
+*            lea     $1234, a0
+*            lea     $5555, a1
+*            lea     $99999999, a5
+*            lea     (a2), a6
+*
+*            sub     #1, d1
+*            sub     d1, d2
+*            sub     (a0), d5
+*            sub     d3, (a5)
+*
+*            addq    #5, d1
+*            addq    #2, (a1)
+*            addq    #3, $5
+*               
+*            * Test for ea printer
+*            moveq   #1, d0
+*            moveq   #0000, d6
+*            moveq   #255, d7
+*            moveq   #152, d0
 
             
 *             movem.w a0-a5, -(a6)
@@ -126,6 +142,7 @@ test_start  nop
             nop
             
 test_end    nop
+
 
 
 

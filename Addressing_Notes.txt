@@ -19,7 +19,10 @@ If we see immediate data or absolute address, look at memory + 2 to get the memo
 - How are we printing BRA?
 
 ###Todo
-- There are some EA that take absolute/immediate but we are not checking for the word after the opcode.
+- There are some EA that take absolute/immediate but we are not checking for the word after the opcode. <-- idk wtf I was thinkig when I wrote that
+- ADD instruction is always assuming there is a Data Register being used, verify this. <- Test ADD with all valid EA modes
+- SUB instruction is always assuming there is a Data Register being used, verify this.
+<- Test SUB with all valid EA modes
 - EA Printing for all missing Opcodes
 	- NOT
 	- JSR
