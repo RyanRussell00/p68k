@@ -19,7 +19,7 @@ printer         move.w  sr, -(sp) * save CCR to stack
 * ---- subroutine code:
                 
 start_printer   
-                clr     d2          *clear everything in the temp register
+                clr.l   d2          *clear everything in the temp register
                 
                 *print space
                 lea     space, a1
@@ -32,27 +32,27 @@ start_printer
                 and.l   #%111000, d2 *mask the temp register to get addressing mode
                 
                 *start comparisons
-is_data         cmp.l   #%000000, d2 *data register
+is_data         cmpi.l  #%000000, d2 *data register
                 bne     is_addr      *if not equal, try next
                 bsr     data_reg
                 bra     printer_x
                 
-is_addr         cmp.l   #%001000, d2 *address register
+is_addr         cmpi.l  #%001000, d2 *address register
                 bne     is_ind_addr  *if not equal, try next
                 bsr     addr_reg
                 bra     printer_x
                 
-is_ind_addr     cmp.l   #%010000, d2 *indirect address register
+is_ind_addr     cmpi.l  #%010000, d2 *indirect address register
                 bne     is_incrmnt   *if not equal, try next
                 bsr     ind_addr_reg
                 bra     printer_x
                 
-is_incrmnt      cmp.l   #%011000, d2 *post increment address register
+is_incrmnt      cmpi.l  #%011000, d2 *post increment address register
                 bne     is_decrmnt    *if not equal, try next
                 bsr     inc_addr_reg
                 bra     printer_x
                 
-is_decrmnt      cmp.l   #%100000, d2 *pre decrement address register
+is_decrmnt      cmpi.l  #%100000, d2 *pre decrement address register
                 bne     is_immdte    *if not equal, try next
                 bsr     dec_addr_reg
                 bra     printer_x
@@ -64,17 +64,18 @@ is_immdte       *Use entire 6 bits for absolute and immediate since we need last
                 bsr     immdte       
                 bra     printer_x
 
-is_abs_w        cmp.l   #%111000, d2 *absolute word
+is_abs_w        cmpi.l  #%111000, d2 *absolute word
                 bne     is_abs_l     *if not equal, try next
                 bsr     abs
                 bra     printer_x
 
-is_abs_l        cmp.l   #%00111001, d2 *absolute long
+is_abs_l        cmpi.l  #%00111001, d2 *absolute long
                 bne     printer_x
                 bsr     abs
+                bra     printer_x
 
 printer_loop    *Check if we have second EA to print
-                clr     d5          *clear d5 to prevent infinite loop
+                clr.l   d5          *clear d5 to prevent infinite loop
                 move.l  d6, d7      *move the destination ea to the ea the subroutine looks at
                 bsr     print_comma
                 bra     start_printer *print second ea
@@ -1306,6 +1307,7 @@ break          dc.b  CR, LF, 0
 *space          dc.b  ' ', 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 
