@@ -101,8 +101,8 @@ valid_both      move.w  sr, -(sp)
                 
                 bsr     valid_ea * validate source
                 
-                * OR the results of both validations
-                or.b    d0, d7 * store result in d7
+                * AND the results of both validations
+                and.b    d0, d7 * store result in d7
                 
 * ---- exit
 valid_both_x    movem.l (sp)+, rl_valid_both
@@ -170,35 +170,35 @@ op_move         move.w  sr, -(sp)
                 lea     msg_move, a1
                 trap    #15
                 
-                *print addressing modes
+                * print addressing modes
                 
-                *get destination. EA Printer parameters expect Mode then Register
-                move.w  (a0), d1    *load instruction into data reg
-                clr     d6
-                clr     d2          *temp register
-                move.w  d1, d6      *prepare destination parameter
-                move.w  d1, d2      *copy to temp register
-                and.l   #%0000000111000000, d6  *clear everything but destination mode
-                lsr     #3, d6      *shift right to move the destination mode 3 from the end
-                and.l   #%0000111000000000, d2  *get destination register
+                * get destination. EA Printer parameters expect Mode then Register
+                move.w  (a0), d1    * load instruction into data reg
+                clr.l   d6
+                clr.l   d2          * temp register
+                move.w  d1, d6      * prepare destination parameter
+                move.w  d1, d2      * copy to temp register
+                and.l   #%0000000111000000, d6  * clear everything but destination mode
+                lsr.l   #3, d6      * shift right to move the destination mode 3 from the end
+                and.l   #%0000111000000000, d2  * get destination register
                 move.l  #9, d3
-                lsr     d3, d2      *shift right to get destination register at end
-                add     d2, d6      *combine destination mode and regiser
+                lsr.l   d3, d2      * shift right to get destination register at end
+                add.l   d2, d6      * combine destination mode and regiser
                 
-                *get source EA
+                * get source EA
                 clr     d7
-                move.w  d1, d7      *load instruction into source EA parameter
-                and     #%0000000000111111, d7  *get source ea
+                move.w  d1, d7      * load instruction into source EA parameter
+                and     #%0000000000111111, d7  * get source ea
                 
-                *At this point: d7 contains source EA and d6 contains destination EA
-                *we set d5 = 1 since we have to print destination and source
+                * At this point: d7 contains source EA and d6 contains destination EA
+                * we set d5 = 1 since we have to print destination and source
                 move.l  #1, d5
                 
-                bsr     printer     *execute EA printer
+                bsr     printer     * execute EA printer
                 
-                bsr     print_nl     *print line break
+                bsr     print_nl    * print line break
                 
-                addq    #$2, a0     *go to next opcode word
+                addq    #$2, a0     * go to next opcode word
 * ---- exit                
 op_move_x       movem.l (sp)+, reglist_move
                 rtr
@@ -675,6 +675,7 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 *~Font name~Courier New~

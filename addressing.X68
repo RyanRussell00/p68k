@@ -1329,7 +1329,8 @@ slash          dc.b  '/', 0
 
 
 
+
 *~Font name~Courier New~
-*~Font size~12~
+*~Font size~11~
 *~Tab type~1~
 *~Tab size~4~
