@@ -402,6 +402,49 @@ print_addq
 addq_printer_x   		movem.l (sp)+, rl_addq_printer *restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
+
+*-----------------------------------------------------------
+* //// BCC Printer
+* parameters:
+*   a0 - opcode address
+* return:
+*   clears all parameters
+*
+rl_bcc_printer reg     a1-a6/d0-d7 * every reg except parameters/return
+bcc_printer    move.w  sr, -(sp) * save CCR to stack
+               movem.l rl_bcc_printer, -(sp) * save current regs to stack
+* ---- subroutine code:
+                
+                bsr     print_space
+                
+                clr     d7 *holds opcode
+                clr     d6 *holds displacement value
+                clr     d5 *holds final destination address
+                *to print the EA we have to check if displacement is 0.
+                *if true, we need to print word after as well
+                move.w  (a0), d7
+                move.b  d7, d6 *get displacement
+                cmpi.b  #%00000000, d6 *check if displacement is 0
+                bne     bcc_print   
+bcc_zero
+                *since displacement is 0 we need additonal word
+                movea.l a0, a1 *save as temp
+                addq    #$2, a1
+                move.w  (a1), d6
+                
+bcc_print
+                move.w  a0, d5 *add current address
+                add.w   d6, d5 *add destination address
+                addq.w  #2, d5 *add 2
+                move.w  d5, d1 *print parameter
+                bsr     print_hex_w *print
+                
+                
+                
+* ---- exit        
+bcc_printer_x movem.l (sp)+, rl_bcc_printer * restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
     
 *-----------------------------------------------------------
 * //// Read data register addressing mode
@@ -1356,6 +1399,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 

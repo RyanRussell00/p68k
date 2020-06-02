@@ -16,7 +16,8 @@ top
              not    (a0)
              not    (a0)
              not    (a0)
-*             BGT    top
+             BGT    top
+             BGT    last
              not    (a0)
              not    (a0)
              not    (a0)
@@ -31,7 +32,7 @@ mid
              not    (a0)
              not    (a0)   
 
-*             BGT top       
+             BGT top       
 
 *            not      (a1)
 *            not      d4
@@ -134,9 +135,6 @@ mid
             rol.b   #$1, d0
             ror.b   #$1, d0
             
-            *testing branching
-*            add     #9999, d7
-*            cmpi    #1, d7
             bra     top
             
             * extras to test screen limits
@@ -175,6 +173,7 @@ mid
             nop
             nop
             nop
+            BGT    top
 
             
 last
@@ -182,6 +181,7 @@ last
 
 
 test_end    nop
+
 
 
 
