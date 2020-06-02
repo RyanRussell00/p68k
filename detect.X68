@@ -212,7 +212,7 @@ read_gr6        move.w  sr, -(sp)
                 move.w  (a0), d7
                 
                 * BRA recognition
-                andi.w  #%111100000000, d7 * clear all bits but 11-8
+                andi.w  #%0000111100000000, d7 * clear all bits but 11-8
                 cmpi.w  #%0, d7 * check if bits 11-8 = 0000
                 bne     gr6_skip1
                 bsr     op_bra
@@ -493,6 +493,7 @@ groups:         jmp     jump_notfound   * group 0 not needed
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
 
 
 

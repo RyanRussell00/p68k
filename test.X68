@@ -9,18 +9,49 @@ test_org    equ     $5000
 * testing codes
 test_start  nop
 
-            sub     d1, (a1)
-            sub     $12345555, d4
-            sub     d3, d4
-            sub     (a4), d3
-            sub     (a1)+, d1
-            sub     -(a3), d5
-            sub     $3321, d6
-            sub     d1, (a3)
-            sub     d3, (a2)+
-            sub     d4, -(a1)
-            sub     d7, $1234
-            sub     d4, $88881111
+             not    (a0)
+top
+             addq   #4, d0
+             not    (a0)
+             not    (a0)
+             not    (a0)
+             not    (a0)
+*             BGT    top
+             not    (a0)
+             not    (a0)
+             not    (a0)
+             not    (a0)
+             not    (a0)
+             not    (a0)
+mid
+             not    (a0)
+             not    (a0)
+             not    (a0)
+             not    (a0)
+             not    (a0)
+             not    (a0)   
+
+*             BGT top       
+
+*            not      (a1)
+*            not      d4
+*            not      (a1)+
+*            not      -(a3)
+*            not      $3321
+*            not      $99996666
+*
+*            or      d1, (a1)
+*            or      $12345555, d4
+*            or      d3, d4
+*            or      (a4), d3
+*            or      (a1)+, d1
+*            or      -(a3), d5
+*            or      $3321, d6
+*            or      d1, (a3)
+*            or      d3, (a2)+
+*            or      d4, -(a1)
+*            or      d7, $1234
+*            or      d4, $88881111
             
             
             
@@ -103,6 +134,11 @@ test_start  nop
             rol.b   #$1, d0
             ror.b   #$1, d0
             
+            *testing branching
+*            add     #9999, d7
+*            cmpi    #1, d7
+            bra     top
+            
             * extras to test screen limits
             nop
             nop
@@ -139,9 +175,16 @@ test_start  nop
             nop
             nop
             nop
-            nop
+
             
+last
+            nop
+
+
 test_end    nop
+
+
+
 
 
 

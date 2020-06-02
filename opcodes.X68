@@ -357,7 +357,7 @@ op_sub          move.w  sr, -(sp)
                 lea     msg_sub, a1
                 trap    #15
                 
-                                *if direction is 0, the Dn is destination
+                *if direction is 0, the Dn is destination
                 clr     d1  *temp
                 clr     d7  *parameters for printer
                 clr     d6
@@ -388,7 +388,6 @@ op_sub          move.w  sr, -(sp)
                 
 print_sub       
                 bsr     printer
-                
                 bsr     print_nl    *print line break
                 
                 addq    #$2, a0
@@ -505,9 +504,41 @@ op_or           move.w  sr, -(sp)
                 movem.l reglist_or, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_or, a1
                 trap    #15
+                
+                clr     d1  *temp
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d7
+                andi.l  #%0000111000000000, d7
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d7
+                
+                *get EA bits 0-5
+                move.w  (a0), d6
+                andi.l  #%0000000000111111, d6
+                
+                *check direction
+                move.w  (a0), d1
+                andi.l  #%0000000100000000, d1 *mask to get direction
+                cmpi.l  #%0000000000000000, d1 *check if direction is 1
+                bne     print_or   *if not 1, go to print add
+                       
+                *if direction is 1, flip d7 and d6
+                clr     d4
+                move.l  d7, d4
+                move.l  d6, d7
+                move.l  d4, d6
+                
+print_or       
+                bsr     printer
+                bsr     print_nl    *print line break
                 
                 addq    #$2, a0
 * ---- exit                
@@ -526,9 +557,17 @@ op_not          move.w  sr, -(sp)
                 movem.l reglist_not, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_not, a1
                 trap    #15
+                
+                clr     d7
+                clr     d5  *set print destination = false
+                move.w  (a0), d7
+                andi    #%0000000000111111, d7 *mask to get bits 0-5
+                
+                bsr     printer
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -547,9 +586,11 @@ op_xsd          move.w  sr, -(sp)
                 movem.l reglist_xsd, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_xsd, a1
                 trap    #15
+                
+                * ToDo: Op printing and EA printing
                 
                 addq    #$2, a0
 * ---- exit                
@@ -572,6 +613,8 @@ op_rod          move.w  sr, -(sp)
                 lea     msg_rod, a1
                 trap    #15
                 
+                * ToDo: Op printing and EA printing
+                
                 addq    #$2, a0
 * ---- exit                
 op_rod_x        movem.l (sp)+, reglist_rod
@@ -589,9 +632,54 @@ op_bcc          move.w  sr, -(sp)
                 movem.l reglist_bcc, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_bcc, a1
                 trap    #15
+                
+                * ToDo: Op printing
+                
+*                bsr     bcc_printer
+                
+                clr     d7 *holds opcode
+                clr     d6 *holds displacement value
+                clr     d5 *holds final destination address
+                clr     d4 *subtraction = 0
+                *to print the EA we have to check if displacement is 0.
+                *if true, we need to print word after as well
+                move.w  (a0), d7
+                move.b  d7, d6 *get displacement
+                cmpi.b  #%00000000, d6 *check if displacement is 0
+                beq     bcc_zero
+                *since displacement != 0, invert bits and subtract 1
+                not.b     d6 *flip bits
+                subi    #1, d6  *subtract 1
+                bra     bcc_skip_1        
+bcc_zero
+                *since displacement is 0 we need additonal word
+                *DO NOT 2's complement
+                movea.l a0, a1
+                addq    #2, a1
+                move.w  (a1), d6
+                move.l  #1, d4  *set flag = 1 to indicate addition
+               
+bcc_skip_1
+                move    a0, d5  *save current address                
+                cmpi    #1, d4
+                beq     bcc_addition
+                *if not 1, we are subtracting
+                sub     d6, d5  *subtract displacement
+*                subq    #2, d5  *sub 2
+                bsr     bcc_print
+
+bcc_addition    
+                add.w     d6, d5  *add displacement  
+                addq.w    #2, d5  *add 2
+                
+bcc_print
+                move.w  d5, d1 *print parameter
+                bsr     print_hex_w *print
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -652,6 +740,8 @@ op_bra          move.w  sr, -(sp)
                 movem.l reglist_bra, -(sp)
 * ---- handle the opcode:
                 
+                *ToDo: BRA should be incorporated into the BCC subroutine
+
                 move.b  #13, d0
                 lea     msg_bra, a1
                 trap    #15
@@ -686,6 +776,9 @@ msg_bra         dc.b    'BRA',0
 
 * ==== included files ====
                 include "addressing.X68"
+
+
+
 
 
 
