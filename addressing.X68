@@ -1,6 +1,6 @@
 *-----------------------------------------------------------
 * Title      : Addressing Mode Detect
-* Description: Detects the addressing mode and prints it to screen
+* Descr iption: Detects the addressing mode and prints it to screen
 *-----------------------------------------------------------
                 
 *-----------------------------------------------------------
@@ -19,12 +19,10 @@ printer         move.w  sr, -(sp) * save CCR to stack
 * ---- subroutine code:
                 
 start_printer   
-                clr.l   d2          *clear everything in the temp register
+                clr     d2          *clear everything in the temp register
                 
                 *print space
-                lea     space, a1
-                move.b  #14, d0
-                trap    #15
+                bsr     print_space
                 
                 *since the original value is untouched, whatever subroutine we call gets the original param
                 move.l  d7, d2      *move the parameter into temp register
@@ -32,27 +30,27 @@ start_printer
                 and.l   #%111000, d2 *mask the temp register to get addressing mode
                 
                 *start comparisons
-is_data         cmpi.l  #%000000, d2 *data register
+is_data         cmp.l   #%000000, d2 *data register
                 bne     is_addr      *if not equal, try next
                 bsr     data_reg
                 bra     printer_x
                 
-is_addr         cmpi.l  #%001000, d2 *address register
+is_addr         cmp.l   #%001000, d2 *address register
                 bne     is_ind_addr  *if not equal, try next
                 bsr     addr_reg
                 bra     printer_x
                 
-is_ind_addr     cmpi.l  #%010000, d2 *indirect address register
+is_ind_addr     cmp.l   #%010000, d2 *indirect address register
                 bne     is_incrmnt   *if not equal, try next
                 bsr     ind_addr_reg
                 bra     printer_x
                 
-is_incrmnt      cmpi.l  #%011000, d2 *post increment address register
+is_incrmnt      cmp.l   #%011000, d2 *post increment address register
                 bne     is_decrmnt    *if not equal, try next
                 bsr     inc_addr_reg
                 bra     printer_x
                 
-is_decrmnt      cmpi.l  #%100000, d2 *pre decrement address register
+is_decrmnt      cmp.l   #%100000, d2 *pre decrement address register
                 bne     is_immdte    *if not equal, try next
                 bsr     dec_addr_reg
                 bra     printer_x
@@ -64,18 +62,24 @@ is_immdte       *Use entire 6 bits for absolute and immediate since we need last
                 bsr     immdte       
                 bra     printer_x
 
-is_abs_w        cmpi.l  #%111000, d2 *absolute word
+is_abs_w        cmp.l   #%111000, d2 *absolute word
                 bne     is_abs_l     *if not equal, try next
                 bsr     abs
                 bra     printer_x
 
-is_abs_l        cmpi.l  #%00111001, d2 *absolute long
-                bne     printer_x
+is_abs_l        cmp.l   #%00111001, d2 *absolute long
+                bne     invalid_ea
                 bsr     abs
                 bra     printer_x
+                
+invalid_ea     
+                lea     invalid, a1 *load message for invalid
+                move.b  #14, d0     
+                trap    #15         *print to screen
+                bra     printer_x    
 
 printer_loop    *Check if we have second EA to print
-                clr.l   d5          *clear d5 to prevent infinite loop
+                clr     d5          *clear d5 to prevent infinite loop
                 move.l  d6, d7      *move the destination ea to the ea the subroutine looks at
                 bsr     print_comma
                 bra     start_printer *print second ea
@@ -317,12 +321,12 @@ reg_list_printer_x
 *-----------------------------------------------------------
 
 *-----------------------------------------------------------
-* //// Prints immediate data as decimal
+* //// Prints MOVEQ EA
 * parameters:
 *   d7 - 6 bit data register mode and register number (must always be Data Register) 
 *   a0 - address of instruction
 * return:
-*   prints to screen the decimal value of the hex value
+*   prints to screen the hex value
 
 rl_moveq_printer       reg     a1-a6/d0-d6      * every reg except parameters/return
 moveq_printer   move.w  sr, -(sp)        * save CCR to stack
@@ -340,7 +344,7 @@ moveq_printer   move.w  sr, -(sp)        * save CCR to stack
                 clr     d1
                 move.w  (a0), d1 *move instruction into register
                 andi    #%0000000011111111, d1
-                *since we get a byte, we only get the data (8 bits) at the front
+                
                 bsr     print_hex_w     *print value as hex word  
                 
                 bsr     print_comma
@@ -351,6 +355,96 @@ moveq_printer   move.w  sr, -(sp)        * save CCR to stack
                 
 * ---- exit        
 moveq_printer_x   		movem.l (sp)+, rl_moveq_printer *restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
+
+*-----------------------------------------------------------
+* //// Prints ADDQ EA
+* parameters:
+*   d7 - 6 bit data register mode and register number
+*   a0 - address of instruction
+* return:
+*   prints to screen the decimal value of the hex value
+
+rl_addq_printer       reg     a1-a6/d0-d6      * every reg except parameters/return
+addq_printer    move.w  sr, -(sp)        * save CCR to stack
+                movem.l rl_addq_printer, -(sp) * save current regs to stack
+* ---- subroutine code:
+                               
+                lea     pound_sign, a1  *load the pound sign to print
+                move.b  #14, d0         *set trap
+                trap    #15             *print to screen
+                
+                clr     d1
+                clr     d6
+                move.w  (a0), d1    *move instruction into register
+                andi    #%0000111000000000, d1
+                rol     #7, d1      *rotate to get value at end
+                
+                *If  0 we print 8
+                cmpi    #000, d1
+                bne     print_addq
+                *print 8 as decimal
+                move.l  #8, d1
+print_addq
+                move.b  #15, d0
+                move.b  #10, d2 *base 10
+                trap    #15    
+                
+                bsr     print_comma
+                
+                *print destination EA
+                clr d5 *prevent printing source and destination
+                bsr     printer
+                
+                
+* ---- exit        
+addq_printer_x   		movem.l (sp)+, rl_addq_printer *restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
+
+*-----------------------------------------------------------
+* //// BCC Printer
+* parameters:
+*   a0 - opcode address
+* return:
+*   prints the destination of the BCC
+*
+rl_bcc_printer reg     a1-a6/d0-d7 * every reg except parameters/return
+bcc_printer    move.w  sr, -(sp) * save CCR to stack
+               movem.l rl_bcc_printer, -(sp) * save current regs to stack
+* ---- subroutine code:
+                
+                bsr     print_space
+                
+                clr     d7 *holds opcode
+                clr     d6 *holds displacement value
+                clr     d1 *holds final destination address
+                move.w  a0, d1 *add current address
+                addq.w  #2, d1 *add 2
+                *to print the EA we have to check if displacement is 0.
+                *if true, we need to print word after as well
+                move.w  (a0), d7
+                move.b  d7, d6 *get displacement
+                cmpi.b  #%00000000, d6 *check if displacement is 0
+                bne     bcc_not_zero   *if NOT 0, go to branch
+
+                *since displacement is 0 we need additonal word
+                movea.l a0, a1 *save as temp
+                addq    #$2, a1
+                move.w  (a1), d6
+                add.w   d6, d1  *add destination address as WORD since we have additional word
+                bra     bcc_print
+                
+bcc_not_zero
+                add.b   d6, d1 *add destination address as BYTE since no additional word               
+bcc_print
+                bsr     print_hex_w *print
+                
+                
+                
+* ---- exit        
+bcc_printer_x movem.l (sp)+, rl_bcc_printer * restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
     
@@ -1248,7 +1342,7 @@ printer_tests_x   		movem.l (sp)+, rl_printer_tests * restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
 
-* Put variables and constants here
+invalid     dc.b    'BAD EA', 0
 
 *direct data registers print
 direct_data_0 dc.b    'd0', 0
@@ -1303,8 +1397,8 @@ decrmnt_addr_7 dc.b  '-(a7)', 0
 *Immediate values prints
 pound_sign     dc.b  '#', 0
 dollar_sign    dc.b  '$', 0
+*Utility
 break          dc.b  CR, LF, 0
-*space          dc.b  ' ', 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
 
@@ -1332,7 +1426,11 @@ slash          dc.b  '/', 0
 
 
 
+
+
+
+
 *~Font name~Courier New~
-*~Font size~11~
+*~Font size~12~
 *~Tab type~1~
 *~Tab size~4~

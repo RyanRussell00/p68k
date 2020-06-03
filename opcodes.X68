@@ -332,9 +332,43 @@ op_add          move.w  sr, -(sp)
                 movem.l reglist_add, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_add, a1
                 trap    #15
+                
+                *if direction is 0, the Dn is destination
+                clr     d1  *temp
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d7
+                andi.l  #%0000111000000000, d7
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d7
+                
+                *get EA bits 0-5
+                move.w  (a0), d6
+                andi.l  #%0000000000111111, d6
+                
+                *check direction
+                move.w  (a0), d1
+                andi.l  #%0000000100000000, d1 *mask to get direction
+                cmpi.l  #%0000000000000000, d1 *check if direction is 1
+                bne     print_add   *if not 1, go to print add
+                       
+                *if direction is 1, flip d7 and d6
+                clr     d4
+                move.l  d7, d4
+                move.l  d6, d7
+                move.l  d4, d6
+                
+print_add       
+                bsr     printer
+                
+                bsr     print_nl    *print line break
                 
                 addq    #$2, a0
 * ---- exit                
@@ -353,9 +387,30 @@ op_adda         move.w  sr, -(sp)
                 movem.l reglist_adda, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_adda, a1
                 trap    #15
+                              
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d6
+                andi.l  #%0001111000000000, d6 *get the 3 bits of the address reg
+                * and the last bit of the instruction group to identify it as An
+                
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d6                
+                
+                *get EA bits 0-5
+                move.w  (a0), d7
+                andi.l  #%0000000000111111, d7
+
+                bsr     printer
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -374,9 +429,19 @@ op_addq         move.w  sr, -(sp)
                 movem.l reglist_addq, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_addq, a1
                 trap    #15
+                
+                bsr     print_space
+                
+                clr     d7
+                move.w  (a0), d7
+                andi    #%0000000000111111, d7
+                
+                bsr     addq_printer
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -395,9 +460,42 @@ op_sub          move.w  sr, -(sp)
                 movem.l reglist_sub, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_sub, a1
                 trap    #15
+                
+                *if direction is 0, the Dn is destination
+                clr     d1  *temp
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d7
+                andi.l  #%0000111000000000, d7
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d7
+                
+                *get EA bits 0-5
+                move.w  (a0), d6
+                andi.l  #%0000000000111111, d6
+                
+                *check direction
+                move.w  (a0), d1
+                andi.l  #%0000000100000000, d1 *mask to get direction
+                cmpi.l  #%0000000000000000, d1 *check if direction is 1
+                bne     print_sub   *if not 1, go to print add
+                       
+                *if direction is 1, flip d7 and d6
+                clr     d4
+                move.l  d7, d4
+                move.l  d6, d7
+                move.l  d4, d6
+                
+print_sub       
+                bsr     printer
+                bsr     print_nl    *print line break
                 
                 addq    #$2, a0
 * ---- exit                
@@ -416,9 +514,29 @@ op_lea          move.w  sr, -(sp)
                 movem.l reglist_lea, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_lea, a1
                 trap    #15
+                
+                clr     d7
+                clr     d6
+                clr     d5
+                move.l  #1, d5 *set destination print = true
+                
+                *get source (bits 0 - 5)
+                move.w  (a0), d7
+                andi    #%0000000000111111, d7
+                
+                *get destination (bits 9-11)
+                *since it always address register we need to manually set reg mode
+                move.w  (a0), d6
+                andi    #%0000111000000000, d6
+                rol.w   #4, d6  *rotate to get the reg bits as MSB
+                add     #%1, d6 *add 1 to indicate An reg mode
+                rol.w   #3, d6  *rotate to get the reg bits as LSB
+                
+                bsr     printer
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -437,9 +555,44 @@ op_and          move.w  sr, -(sp)
                 movem.l reglist_and, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_and, a1
                 trap    #15
+                
+                *if direction is 0, the Dn is destination
+                clr     d1  *temp
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d7
+                andi.l  #%0000111000000000, d7
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d7
+                
+                *get EA bits 0-5
+                move.w  (a0), d6
+                andi.l  #%0000000000111111, d6
+                
+                *check direction
+                move.w  (a0), d1
+                andi.l  #%0000000100000000, d1 *mask to get direction
+                cmpi.l  #%0000000000000000, d1 *check if direction is 0
+                bne     print_and   *if not 1, go to print and
+                       
+                *if direction is 1, flip d7 and d6
+                clr     d4
+                move.l  d7, d4
+                move.l  d6, d7
+                move.l  d4, d6
+                
+print_and       
+                bsr     printer
+                
+                bsr     print_nl    *print line break
+
                 
                 addq    #$2, a0
 * ---- exit                
@@ -458,9 +611,41 @@ op_or           move.w  sr, -(sp)
                 movem.l reglist_or, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_or, a1
                 trap    #15
+                
+                clr     d1  *temp
+                clr     d7  *parameters for printer
+                clr     d6
+                clr     d5
+                move.l  #%1, d5 *set printing destination true
+                *get source and destination
+                *get data register at bits 9-11
+                move.w  (a0), d7
+                andi.l  #%0000111000000000, d7
+                *rotate left 7 times to get data reg bits at end
+                rol.w   #7, d7
+                
+                *get EA bits 0-5
+                move.w  (a0), d6
+                andi.l  #%0000000000111111, d6
+                
+                *check direction
+                move.w  (a0), d1
+                andi.l  #%0000000100000000, d1 *mask to get direction
+                cmpi.l  #%0000000000000000, d1 *check if direction is 1
+                bne     print_or   *if not 1, go to print add
+                       
+                *if direction is 1, flip d7 and d6
+                clr     d4
+                move.l  d7, d4
+                move.l  d6, d7
+                move.l  d4, d6
+                
+print_or       
+                bsr     printer
+                bsr     print_nl    *print line break
                 
                 addq    #$2, a0
 * ---- exit                
@@ -479,9 +664,17 @@ op_not          move.w  sr, -(sp)
                 movem.l reglist_not, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_not, a1
                 trap    #15
+                
+                clr     d7
+                clr     d5  *set print destination = false
+                move.w  (a0), d7
+                andi    #%0000000000111111, d7 *mask to get bits 0-5
+                
+                bsr     printer
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -500,9 +693,11 @@ op_xsd          move.w  sr, -(sp)
                 movem.l reglist_xsd, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_xsd, a1
                 trap    #15
+                
+                * ToDo: Op printing and EA printing
                 
                 addq    #$2, a0
 * ---- exit                
@@ -525,6 +720,8 @@ op_rod          move.w  sr, -(sp)
                 lea     msg_rod, a1
                 trap    #15
                 
+                * ToDo: Op printing and EA printing
+                
                 addq    #$2, a0
 * ---- exit                
 op_rod_x        movem.l (sp)+, reglist_rod
@@ -542,9 +739,14 @@ op_bcc          move.w  sr, -(sp)
                 movem.l reglist_bcc, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_bcc, a1
                 trap    #15
+                
+                * ToDo: Op printing
+                
+                bsr     bcc_printer
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -563,9 +765,17 @@ op_jsr          move.w  sr, -(sp)
                 movem.l reglist_jsr, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_jsr, a1
                 trap    #15
+                
+                clr     d7
+                move.w  (a0), d7
+                andi.w  #%0000000000111111, d7 *get EA mode and reg
+                
+                bsr     printer
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
@@ -600,19 +810,21 @@ op_rts_x        movem.l (sp)+, reglist_rts
 * return:
 *   a0 - address of next opcode word
 *
-reglist_bra     reg     a1-a6/d0-d7
-op_bra          move.w  sr, -(sp)
-                movem.l reglist_bra, -(sp)
-* ---- handle the opcode:
-                
-                move.b  #13, d0
-                lea     msg_bra, a1
-                trap    #15
-                
-                addq    #$2, a0
-* ---- exit                
-op_bra_x        movem.l (sp)+, reglist_bra
-                rtr
+*reglist_bra     reg     a1-a6/d0-d7
+*op_bra          move.w  sr, -(sp)
+*                movem.l reglist_bra, -(sp)
+** ---- handle the opcode:
+*                
+*                *ToDo: BRA should be incorporated into the BCC subroutine
+*
+*                move.b  #13, d0
+*                lea     msg_bra, a1
+*                trap    #15
+*                
+*                addq    #$2, a0
+** ---- exit                
+*op_bra_x        movem.l (sp)+, reglist_bra
+*                rtr
 
 * ==== constants and variables ====
 
@@ -675,6 +887,13 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
+
+
+
+
+
+
 
 
 

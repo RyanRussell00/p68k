@@ -19,7 +19,28 @@ If we see immediate data or absolute address, look at memory + 2 to get the memo
 - How are we printing BRA?
 
 ###Todo
-- BRA Printer
-- BCC Printer
-- MOVEQ Printer
+- EA Printing for all missing Opcodes
+	- NOT
+	- JSR
+	- LEA
+	- ADDQ
+	- BRA
+	- BGT
+	- BLE
+	- BEQ
+	- OR
+	- SUB
+	- AND
+	- ADD
+	- ADDA
+	- LSL (register and immediate)
+	- LSR (register and immediate)
+	- ASL (register and immediate)
+	- ASR (register and immediate)
+	- ROL (register and immediate)
+	- ROR (register and immediate)
+- Immediate address is only printed in word right now, even if given long
+	- Use a register to switch between word and long printing
 - If EA mode is not supported print "Incorrect EA mode"
+	- Implemented. Need to test.
+- Test the BCC/BRA instructions
