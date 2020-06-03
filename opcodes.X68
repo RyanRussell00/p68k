@@ -693,7 +693,8 @@ op_xsd          move.w  sr, -(sp)
                 movem.l reglist_xsd, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #14, d0
+                * ToDo: change 13 to 14 to print without newline
+                move.b  #13, d0
                 lea     msg_xsd, a1
                 trap    #15
                 
@@ -887,6 +888,7 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 

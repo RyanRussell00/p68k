@@ -8,45 +8,45 @@ test_org    equ     $5000
 
 * testing codes
 test_start  nop 
-
-             not    (a0)
+            
+            not     (a0)
 top
-             addq   #4, d0
-             not    (a0)
-             not    (a0)
-             not    (a0)
-             not    (a0)
-             BGT    top
-             BGT    last
-             
-             jsr     mid
-             jsr     (a4)
-             jsr     $8888
-             jsr     $90901111
-             jsr     top
-                 
-             not    (a0)
-             not    (a0)
-             not    (a0)
-             not    (a0)
-             not    (a0)
-             not    (a0)
+            addq    #4, d0
+            not     (a0)
+            not     (a0)
+            not     (a0)
+            not     (a0)
+            BGT     top
+            BGT     last
+            
+            jsr     mid
+            jsr     (a4)
+            jsr     $8888
+            jsr     $90901111
+            jsr     top
+            
+            not     (a0)
+            not     (a0)
+            not     (a0)
+            not     (a0)
+            not     (a0)
+            not     (a0)
 mid
-             not    (a0)
-             not    (a0)
-             not    (a0)
-             not    (a0)
-             not    (a0)
-             not    (a0)   
-
-             BGT top       
-
-            not      (a1)
-            not      d4
-            not      (a1)+
-            not      -(a3)
-            not      $3321
-            not      $99996666
+            not     (a0)
+            not     (a0)
+            not     (a0)
+            not     (a0)
+            not     (a0)
+            not     (a0)   
+            
+            BGT     top       
+            
+            not     (a1)
+            not     d4
+            not     (a1)+
+            not     -(a3)
+            not     $3321
+            not     $99996666
 
             or      d1, (a1)
             or      $12345555, d4
@@ -60,9 +60,6 @@ mid
             or      d4, -(a1)
             or      d7, $1234
             or      d4, $88881111
-            
-            
-            
 
             lea     $1234, a0
             lea     $5555, a1
@@ -79,16 +76,12 @@ mid
             addq    #3, $5
                
             * Test for ea printer
-
-
-             movem.w a0-a5, -(a6)
+            movem.w a0-a5, -(a6)
             movem.l (a6)+, a0-a7/d0-d7
             movem.w a0-a7/d0-d7, -(a0)
             movem.w d7, -(a3)
             movem.w a0-a7/d0-d7, -(a6)
 
-            
-            
             * Tests for abs.w and abs.l
             move.w  $1, d0
             move.w  $ABCD0123, d0
@@ -157,54 +150,15 @@ mid
             asr.b   #$1, d0
             rol.b   #$1, d0
             ror.b   #$1, d0
-
             
             bra     top
-            
-            * extras to test screen limits
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            nop
-            BGT    top
-
+            bgt     top
             
 last
             nop
 
-
 test_end    nop
+
 
 *~Font name~Courier New~
 *~Font size~10~

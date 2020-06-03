@@ -13,7 +13,7 @@
 * return:
 *   prints the EA to screen as: [space] SOURCE, [space] DESTINATION
 
-rl_printer      reg     a1-a6/d0-d4 * every reg except parameters/return
+rl_printer      reg     a1-a6/d0-d7 * every reg except return
 printer         move.w  sr, -(sp) * save CCR to stack
                 movem.l rl_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -328,7 +328,7 @@ reg_list_printer_x
 * return:
 *   prints to screen the hex value
 
-rl_moveq_printer       reg     a1-a6/d0-d6      * every reg except parameters/return
+rl_moveq_printer       reg     a1-a6/d0-d7      * every reg except return
 moveq_printer   move.w  sr, -(sp)        * save CCR to stack
                 movem.l rl_moveq_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -366,7 +366,7 @@ moveq_printer_x   		movem.l (sp)+, rl_moveq_printer *restore old registers
 * return:
 *   prints to screen the decimal value of the hex value
 
-rl_addq_printer       reg     a1-a6/d0-d6      * every reg except parameters/return
+rl_addq_printer       reg     a1-a6/d0-d7      * every reg except return
 addq_printer    move.w  sr, -(sp)        * save CCR to stack
                 movem.l rl_addq_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -410,7 +410,7 @@ addq_printer_x   		movem.l (sp)+, rl_addq_printer *restore old registers
 * return:
 *   prints the destination of the BCC
 *
-rl_bcc_printer reg     a1-a6/d0-d7 * every reg except parameters/return
+rl_bcc_printer reg     a1-a6/d0-d7 * every reg except return
 bcc_printer    move.w  sr, -(sp) * save CCR to stack
                movem.l rl_bcc_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -453,7 +453,7 @@ bcc_printer_x movem.l (sp)+, rl_bcc_printer * restore old registers
 * parameters:
 *   d7 - 6 bit binary string that holds the data mode and data register
 *
-rl_data_reg      reg     a0-a6/d0-d7 * every reg except parameters/return
+rl_data_reg      reg     a0-a6/d0-d7 * every reg except return
 
 data_reg        move.w  sr, -(sp) * save CCR to stack
                 movem.l rl_data_reg, -(sp) * save current regs to stack
@@ -529,7 +529,7 @@ data_reg_x  movem.l (sp)+, rl_data_reg *restore old registers
 * parameters:
 *   d7 - 6 bit binary string that holds the address mode and address register
 *
-rl_addr_reg      reg     a0-a6/d0-d7 * every reg except parameters/return
+rl_addr_reg      reg     a0-a6/d0-d7 * every reg except return
 
 addr_reg        move.w  sr, -(sp)    * save CCR to stack
                 movem.l rl_addr_reg, -(sp) * save current regs to stack
@@ -605,7 +605,7 @@ addr_reg_x      movem.l (sp)+, rl_addr_reg *restore old registers
 * parameters:
 *   d7 - 6 bit binary string that holds the address mode and address register
 *
-rl_ind_addr_reg      reg     a0-a6/d0-d7 * every reg except parameters/return
+rl_ind_addr_reg      reg     a0-a6/d0-d7 * every reg except return
 
 ind_addr_reg    move.w  sr, -(sp)    * save CCR to stack
                 movem.l rl_ind_addr_reg, -(sp) * save current regs to stack
@@ -681,7 +681,7 @@ ind_addr_reg_x  movem.l (sp)+, rl_ind_addr_reg *restore old registers
 * parameters:
 *   d7 - 6 bit binary string that holds the address mode and address register
 *
-rl_inc_addr_reg      reg     a0-a6/d0-d7 * every reg except parameters/return
+rl_inc_addr_reg      reg     a0-a6/d0-d7 * every reg except return
 
 inc_addr_reg    move.w  sr, -(sp)    * save CCR to stack
                 movem.l rl_inc_addr_reg, -(sp) * save current regs to stack
@@ -757,7 +757,7 @@ inc_addr_reg_x  movem.l (sp)+, rl_inc_addr_reg *restore old registers
 * parameters:
 *   d7 - 6 bit binary string that holds the address mode and address register
 *
-rl_dec_addr_reg      reg     a0-a6/d0-d7 * every reg except parameters/return
+rl_dec_addr_reg      reg     a0-a6/d0-d7 * every reg except return
 
 dec_addr_reg    move.w  sr, -(sp)    * save CCR to stack
                 movem.l rl_dec_addr_reg, -(sp) * save current regs to stack
@@ -836,7 +836,7 @@ dec_addr_reg_x  movem.l (sp)+, rl_dec_addr_reg *restore old registers
 * return:
 *   prints to screen the decimal value of the hex value
 
-rl_immdte       reg     a1-a6/d0-d6      * every reg except parameters/return
+rl_immdte       reg     a1-a6/d0-d7      * every reg except return
 immdte          move.w  sr, -(sp)        * save CCR to stack
                 movem.l rl_immdte, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -874,7 +874,7 @@ immdte_x   		movem.l (sp)+, rl_immdte *restore old registers
 * return:
 *   prints to screen the decimal value of the absolute value
 
-rl_abs          reg     a1-a6/d0-d7     * every reg except parameters/return
+rl_abs          reg     a1-a6/d0-d7     * every reg except return
 abs             move.w  sr, -(sp)       * save CCR to stack
                 movem.l rl_abs, -(sp)   * save current regs to stack
 
@@ -930,7 +930,7 @@ abs_x   		movem.l (sp)+, rl_abs *restore old registers
 * return:
 *   clears all parameters
 *
-rl_reset_printer reg     a1-a6/d0-d4 * every reg except parameters/return
+rl_reset_printer reg     a1-a6/d0-d7 * every reg except return
 reset_printer    move.w  sr, -(sp) * save CCR to stack
                  movem.l rl_reset_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -1026,7 +1026,7 @@ reset_printer_x movem.l (sp)+, rl_reset_printer * restore old registers
 * return:
 *   prints comma to screen
 *
-rl_print_comma  reg     d0
+rl_print_comma  reg     a1/d0
 print_comma     move.w  sr, -(sp)
                 movem.l rl_print_comma, -(sp)
 * ---- subroutine code:
@@ -1046,7 +1046,7 @@ print_comma_x   movem.l (sp)+, rl_print_comma
 * return:
 *   prints slash to screen
 *
-rl_print_slash  reg     d0
+rl_print_slash  reg     a1/d0
 print_slash     move.w  sr, -(sp)
                 movem.l rl_print_slash, -(sp)
 * ---- subroutine code:
@@ -1062,7 +1062,7 @@ print_slash_x   movem.l (sp)+, rl_print_slash
 *-----------------------------------------------------------
 * //// Tests for the EA printer
 *
-rl_printer_tests    	reg     a0-a6/d0-d7 * every reg except parameters/return
+rl_printer_tests    	reg     a0-a6/d0-d7 * every reg except return
 printer_tests    move.w  sr, -(sp) * save CCR to stack
                     movem.l rl_printer_tests, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -1430,7 +1430,9 @@ slash          dc.b  '/', 0
 
 
 
+
+
 *~Font name~Courier New~
-*~Font size~12~
+*~Font size~10~
 *~Tab type~1~
 *~Tab size~4~
