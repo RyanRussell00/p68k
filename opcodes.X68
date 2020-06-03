@@ -658,9 +658,17 @@ op_jsr          move.w  sr, -(sp)
                 movem.l reglist_jsr, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_jsr, a1
                 trap    #15
+                
+                clr     d7
+                move.w  (a0), d7
+                andi.w  #%0000000000111111, d7 *get EA mode and reg
+                
+                bsr     printer
+                
+                bsr     print_nl
                 
                 addq    #$2, a0
 * ---- exit                
