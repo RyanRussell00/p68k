@@ -2,6 +2,113 @@
 * Subroutines to handle every opcode.
 *
 
+* ==== validation subroutines ====
+
+*-----------------------------------------------------------
+* //// validate EA mode against opcode
+* parameters:
+*   d5 - EA mode (bits 3-5) and register (bits 0-2)
+*   d6 - byte for EA mode list, lists all allowed EA modes
+* return:
+*   d7 - byte is $FF if the EA mode is valid, $00 if invalid
+*
+rl_v_ea         reg     a0-a6/d0-d6
+valid_ea        move.w  sr, -(sp)
+                movem.l rl_v_ea, -(sp)
+* ---- subroutine code:
+                
+                andi.b  #%111111, d5 * keep only last 6 bits
+                
+                cmpi.b  #%111000, d5 * absolute word
+                beq     mode_abs_w
+                cmpi.b  #%111001, d5 * absolute long
+                beq     mode_abs_l
+                cmpi.b  #%111100, d5 * immediate data
+                beq     mode_imm
+                
+                lsr.b   #3, d5 * move EA mode to last 3 bits
+                
+                cmpi.b  #%000, d5 * datareg direct
+                beq     mode_dn
+                cmpi.b  #%001, d5 * addreg direct
+                beq     mode_an
+                cmpi.b  #%010, d5 * addreg indirect
+                beq     mode_ani
+                cmpi.b  #%011, d5 * addreg indirect with postinc
+                beq     mode_ani_psi
+                cmpi.b  #%100, d5 * addreg indirect with predec
+                beq     mode_ani_prd
+                
+                sf      d7 * set result to invalid
+                bra valid_ea_x * valid mode not found
+                
+mode_dn         lsl.b   #1, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_an         lsl.b   #2, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_ani        lsl.b   #3, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_ani_psi    lsl.b   #4, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_ani_prd    lsl.b   #5, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_abs_w      lsl.b   #6, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_abs_l      lsl.b   #7, d6
+                scs     d7
+                bra     valid_ea_x
+                
+mode_imm        lsl.b   #8, d6
+                scs     d7
+                bra     valid_ea_x
+                
+* ---- exit        
+valid_ea_x      movem.l (sp)+, rl_v_ea
+                rtr
+
+*-----------------------------------------------------------
+* //// validate two EA modes at once, source and destination
+* parameters:
+*   d3 - source mode (bits 3-5) and register (bits 0-2)
+*   d4 - source mode list, byte
+*   d5 - destination mode (bits 3-5) and register (bits 0-2)
+*   d6 - destination mode list, byte
+* return:
+*   d7 - byte is $FF if both valid, $00 if either are invalid
+*
+rl_valid_both   reg     a0-a6/d0-d6
+valid_both      move.w  sr, -(sp)
+                movem.l rl_valid_both, -(sp)
+* ---- subroutine code:
+                
+                bsr     valid_ea * validate destination
+                move.b  d7, d0 * save first result
+                
+                move.b  d3, d5 * prepare source mode/reg
+                move.b  d4, d5 * prepare source mode list
+                
+                bsr     valid_ea * validate source
+                
+                * AND the results of both validations
+                and.b    d0, d7 * store result in d7
+                
+* ---- exit
+valid_both_x    movem.l (sp)+, rl_valid_both
+                rtr
+
+
 * ==== opcode subroutines ====
 
 *-----------------------------------------------------------
@@ -63,35 +170,35 @@ op_move         move.w  sr, -(sp)
                 lea     msg_move, a1
                 trap    #15
                 
-                *print addressing modes
+                * print addressing modes
                 
-                *get destination. EA Printer parameters expect Mode then Register
-                move.w  (a0), d1    *load instruction into data reg
-                clr     d6
-                clr     d2          *temp register
-                move.w  d1, d6      *prepare destination parameter
-                move.w  d1, d2      *copy to temp register
-                and.l   #%0000000111000000, d6  *clear everything but destination mode
-                lsr     #3, d6      *shift right to move the destination mode 3 from the end
-                and.l   #%0000111000000000, d2  *get destination register
+                * get destination. EA Printer parameters expect Mode then Register
+                move.w  (a0), d1    * load instruction into data reg
+                clr.l   d6
+                clr.l   d2          * temp register
+                move.w  d1, d6      * prepare destination parameter
+                move.w  d1, d2      * copy to temp register
+                and.l   #%0000000111000000, d6  * clear everything but destination mode
+                lsr.l   #3, d6      * shift right to move the destination mode 3 from the end
+                and.l   #%0000111000000000, d2  * get destination register
                 move.l  #9, d3
-                lsr     d3, d2      *shift right to get destination register at end
-                add     d2, d6      *combine destination mode and regiser
+                lsr.l   d3, d2      * shift right to get destination register at end
+                add.l   d2, d6      * combine destination mode and regiser
                 
-                *get source EA
+                * get source EA
                 clr     d7
-                move.w  d1, d7      *load instruction into source EA parameter
-                and     #%0000000000111111, d7  *get source ea
+                move.w  d1, d7      * load instruction into source EA parameter
+                and     #%0000000000111111, d7  * get source ea
                 
-                *At this point: d7 contains source EA and d6 contains destination EA
-                *we set d5 = 1 since we have to print destination and source
+                * At this point: d7 contains source EA and d6 contains destination EA
+                * we set d5 = 1 since we have to print destination and source
                 move.l  #1, d5
                 
-                bsr     printer     *execute EA printer
+                bsr     printer     * execute EA printer
                 
-                bsr     print_nl     *print line break
+                bsr     print_nl    * print line break
                 
-                addq    #$2, a0     *go to next opcode word
+                addq    #$2, a0     * go to next opcode word
 * ---- exit                
 op_move_x       movem.l (sp)+, reglist_move
                 rtr
@@ -721,31 +828,65 @@ op_rts_x        movem.l (sp)+, reglist_rts
 
 * ==== constants and variables ====
 
-msg_data        dc.b    'DATA',0
-msg_nop         dc.b    'NOP',0
-msg_move        dc.b    'MOVE',0
-msg_moveq       dc.b    'MOVEQ',0
-msg_movem       dc.b    'MOVEM',0
-msg_movea       dc.b    'MOVEA',0
-msg_add         dc.b    'ADD',0
-msg_adda        dc.b    'ADDA',0
-msg_addq        dc.b    'ADDQ',0
-msg_sub         dc.b    'SUB',0
-msg_lea         dc.b    'LEA',0
-msg_and         dc.b    'AND',0
-msg_or          dc.b    'OR',0
-msg_not         dc.b    'NOT',0
-msg_xsd         dc.b    'xSd',0
-msg_rod         dc.b    'ROd',0
-msg_bcc         dc.b    'Bcc',0
-msg_jsr         dc.b    'JSR',0
-msg_rts         dc.b    'RTS',0
-msg_bra         dc.b    'BRA',0
+* messages
+msg_data        dc.w    'DATA',0
+msg_nop         dc.w    'NOP',0
+msg_move        dc.w    'MOVE',0
+msg_moveq       dc.w    'MOVEQ',0
+msg_movem       dc.w    'MOVEM',0
+msg_movea       dc.w    'MOVEA',0
+msg_add         dc.w    'ADD',0
+msg_adda        dc.w    'ADDA',0
+msg_addq        dc.w    'ADDQ',0
+msg_sub         dc.w    'SUB',0
+msg_lea         dc.w    'LEA',0
+msg_and         dc.w    'AND',0
+msg_or          dc.w    'OR',0
+msg_not         dc.w    'NOT',0
+msg_xsd         dc.w    'xSd',0
+msg_rod         dc.w    'ROd',0
+msg_bcc         dc.w    'Bcc',0
+msg_jsr         dc.w    'JSR',0
+msg_rts         dc.w    'RTS',0
+msg_bra         dc.w    'BRA',0
+
+* EA validation list style, byte bits 7->0:
+*   bit 7: Dn
+*   bit 6: An
+*   bit 5: (An)
+*   bit 4: (An)+
+*   bit 3: -(An)
+*   bit 2: abs.W
+*   bit 1: abs.L
+*   bit 0: #imm
+
+* EA validation source lists
+ea_move_s       dc.b    %11111111
+ea_movea_s      dc.b    %11111111
+ea_movem_s      dc.b    %00110110
+ea_lea_s        dc.b    %00100110
+ea_not_s        dc.b    %10111110
+ea_jsr_s        dc.b    %00100110
+ea_or_s         dc.b    %10111111
+ea_sub_s        dc.b    %11111111
+ea_and_s        dc.b    %10111111
+ea_add_s        dc.b    %11111111
+ea_adda_s       dc.b    %11111111
+
+* EA validation destination lists
+ea_move_d       dc.b    %10111110
+ea_movem_d      dc.b    %00101110
+ea_addq_d       dc.b    %11111110
+ea_or_d         dc.b    %10111110
+ea_sub_d        dc.b    %10111110
+ea_and_d        dc.b    %10111110
+ea_add_d        dc.b    %10111110
+ea_lsd_d        dc.b    %10111110
+ea_asd_d        dc.b    %10111110
+ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
-
-
 
 
 

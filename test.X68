@@ -79,18 +79,34 @@ mid
             addq    #3, $5
                
             * Test for ea printer
-            moveq   #1, d0
-            moveq   #0000, d6
-            moveq   #255, d7
-            moveq   #152, d0
 
-            
+
              movem.w a0-a5, -(a6)
             movem.l (a6)+, a0-a7/d0-d7
             movem.w a0-a7/d0-d7, -(a0)
             movem.w d7, -(a3)
             movem.w a0-a7/d0-d7, -(a6)
+
             
+            
+            * Tests for abs.w and abs.l
+            move.w  $1, d0
+            move.w  $ABCD0123, d0
+            move.w  d0, $2
+            move.w  d0, $0123DCBA
+            
+            move.w  $1, $2
+            move.w  $1, $12345678
+            move.w  $12345678, $1
+            move.w  $12345678, $12345678
+            
+            * Tests for immediate data
+            move.b  #$12, d0
+            move.w  #$1234, d0
+            move.l  #$12345678, d0
+            
+            * Tests for unsupported EA modes
+            move.w  ($AA, a1), ($BB, a2)
             
             * group 1
             move.b  d0, d1
@@ -141,6 +157,7 @@ mid
             asr.b   #$1, d0
             rol.b   #$1, d0
             ror.b   #$1, d0
+
             
             bra     top
             
@@ -188,18 +205,6 @@ last
 
 
 test_end    nop
-
-
-
-
-
-
-
-
-
-
-
-
 
 *~Font name~Courier New~
 *~Font size~10~
