@@ -70,7 +70,6 @@ wait_user       move.w  sr, -(sp)
                 
                 move.b  #5, d0 * read character from keyboard
                 trap    #15
-                
 * ---- exit
 wait_user_x     movem.l (sp)+, rl_wait_user
                 rtr
@@ -297,6 +296,7 @@ indent          dc.w    HT,HT,0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 *~Font name~Courier New~

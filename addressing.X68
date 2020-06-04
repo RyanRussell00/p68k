@@ -11,6 +11,7 @@
 *   d5 - set to 1 if destination ea exists, set to 0 otherwise
 *   a0 - address of the opcode we are looking at
 * return:
+*   a0 - address offset from original opcode in case of extra words
 *   prints the EA to screen as: [space] SOURCE, [space] DESTINATION
 
 rl_printer      reg     a1-a6/d0-d7 * every reg except return
@@ -1401,6 +1402,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 

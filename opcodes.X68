@@ -2,76 +2,100 @@
 * Subroutines to handle every opcode.
 *
 
-* ==== validation subroutines ====
+* ==== EA pre-processing subroutines ====
 
+*-----------------------------------------------------------
+* //// handle EA mode
+* parameters:
+*   d7 - 6 bit binary string that holds the SOURCE op mode/register
+*   d6 - 6 bit binary string that holds the DESTINATION op mode/register
+*   d5 - set to 1 if destination ea exists, set to 0 otherwise
+*   d4 - valid EA source list
+*   d3 - valid EA destination list
+*   a0 - address of the opcode we are looking at
+* return:
+*   a0 - address offset from original opcode in case of extra words
+*
+rl_handle_ea    reg     a1-a6/d0-d7
+handle_ea       move.w  sr, -(sp)
+                movem.l rl_handle_ea, -(sp)
+* ---- subroutine code:
+                
+                bsr     printer
+                bsr     print_nl
+                
+* ---- exit                
+handle_ea_x     movem.l (sp)+, rl_handle_ea
+                rtr
+                
 *-----------------------------------------------------------
 * //// validate EA mode against opcode
 * parameters:
-*   d5 - EA mode (bits 3-5) and register (bits 0-2)
-*   d6 - byte for EA mode list, lists all allowed EA modes
+*   d7 - EA mode (bits 3-5) and register (bits 0-2)
+*   d4 - byte for EA mode list, lists all allowed EA modes
 * return:
-*   d7 - byte is $FF if the EA mode is valid, $00 if invalid
+*   d2 - byte is $FF if the EA mode is valid, $00 if invalid
 *
-rl_v_ea         reg     a0-a6/d0-d6
+rl_v_ea         reg     a0-a6/d0-d1/d3-d7
 valid_ea        move.w  sr, -(sp)
                 movem.l rl_v_ea, -(sp)
 * ---- subroutine code:
                 
-                andi.b  #%111111, d5 * keep only last 6 bits
+                andi.b  #%111111, d7 * keep only last 6 bits
                 
-                cmpi.b  #%111000, d5 * absolute word
+                cmpi.b  #%111000, d7 * absolute word
                 beq     mode_abs_w
-                cmpi.b  #%111001, d5 * absolute long
+                cmpi.b  #%111001, d7 * absolute long
                 beq     mode_abs_l
-                cmpi.b  #%111100, d5 * immediate data
+                cmpi.b  #%111100, d7 * immediate data
                 beq     mode_imm
                 
-                lsr.b   #3, d5 * move EA mode to last 3 bits
+                lsr.b   #3, d7 * move EA mode to last 3 bits
                 
-                cmpi.b  #%000, d5 * datareg direct
+                cmpi.b  #%000, d7 * datareg direct
                 beq     mode_dn
-                cmpi.b  #%001, d5 * addreg direct
+                cmpi.b  #%001, d7 * addreg direct
                 beq     mode_an
-                cmpi.b  #%010, d5 * addreg indirect
+                cmpi.b  #%010, d7 * addreg indirect
                 beq     mode_ani
-                cmpi.b  #%011, d5 * addreg indirect with postinc
+                cmpi.b  #%011, d7 * addreg indirect with postinc
                 beq     mode_ani_psi
-                cmpi.b  #%100, d5 * addreg indirect with predec
+                cmpi.b  #%100, d7 * addreg indirect with predec
                 beq     mode_ani_prd
                 
-                sf      d7 * set result to invalid
+                sf      d2 * set result to invalid
                 bra valid_ea_x * valid mode not found
                 
-mode_dn         lsl.b   #1, d6
-                scs     d7
+mode_dn         lsl.b   #1, d4
+                scs     d2
                 bra     valid_ea_x
                 
-mode_an         lsl.b   #2, d6
-                scs     d7
+mode_an         lsl.b   #2, d4
+                scs     d2
                 bra     valid_ea_x
                 
-mode_ani        lsl.b   #3, d6
-                scs     d7
+mode_ani        lsl.b   #3, d4
+                scs     d2
                 bra     valid_ea_x
                 
-mode_ani_psi    lsl.b   #4, d6
-                scs     d7
+mode_ani_psi    lsl.b   #4, d4
+                scs     d2
                 bra     valid_ea_x
                 
-mode_ani_prd    lsl.b   #5, d6
-                scs     d7
+mode_ani_prd    lsl.b   #5, d4
+                scs     d2
                 bra     valid_ea_x
                 
-mode_abs_w      lsl.b   #6, d6
-                scs     d7
+mode_abs_w      lsl.b   #6, d4
+                scs     d2
                 bra     valid_ea_x
                 
-mode_abs_l      lsl.b   #7, d6
-                scs     d7
+mode_abs_l      lsl.b   #7, d4
+                scs     d2
                 bra     valid_ea_x
                 
-mode_imm        lsl.b   #8, d6
-                scs     d7
+mode_imm        lsl.b   #8, d4
+                scs     d2
                 bra     valid_ea_x
                 
 * ---- exit        
@@ -81,28 +105,28 @@ valid_ea_x      movem.l (sp)+, rl_v_ea
 *-----------------------------------------------------------
 * //// validate two EA modes at once, source and destination
 * parameters:
-*   d3 - source mode (bits 3-5) and register (bits 0-2)
+*   d7 - source mode (bits 3-5) and register (bits 0-2)
+*   d6 - destination mode (bits 3-5) and register (bits 0-2)
 *   d4 - source mode list, byte
-*   d5 - destination mode (bits 3-5) and register (bits 0-2)
-*   d6 - destination mode list, byte
+*   d3 - destination mode list, byte
 * return:
-*   d7 - byte is $FF if both valid, $00 if either are invalid
+*   d2 - byte is $FF if both valid, $00 if either are invalid
 *
-rl_valid_both   reg     a0-a6/d0-d6
+rl_valid_both   reg     a0-a6/d0-d1/d3-d7
 valid_both      move.w  sr, -(sp)
                 movem.l rl_valid_both, -(sp)
 * ---- subroutine code:
                 
-                bsr     valid_ea * validate destination
-                move.b  d7, d0 * save first result
+                bsr     valid_ea * validate source
+                move.b  d2, d0 * save first result
                 
-                move.b  d3, d5 * prepare source mode/reg
-                move.b  d4, d5 * prepare source mode list
+                move.b  d3, d5 * prepare destination mode/reg
+                move.b  d4, d5 * prepare destination mode list
                 
                 bsr     valid_ea * validate source
                 
                 * AND the results of both validations
-                and.b    d0, d7 * store result in d7
+                and.b    d0, d2 * store result in d7
                 
 * ---- exit
 valid_both_x    movem.l (sp)+, rl_valid_both
@@ -175,28 +199,25 @@ op_move         move.w  sr, -(sp)
                 * get destination. EA Printer parameters expect Mode then Register
                 move.w  (a0), d1    * load instruction into data reg
                 clr.l   d6
-                clr.l   d2          * temp register
+                clr.l   d2
                 move.w  d1, d6      * prepare destination parameter
                 move.w  d1, d2      * copy to temp register
                 and.l   #%0000000111000000, d6  * clear everything but destination mode
                 lsr.l   #3, d6      * shift right to move the destination mode 3 from the end
                 and.l   #%0000111000000000, d2  * get destination register
-                move.l  #9, d3
-                lsr.l   d3, d2      * shift right to get destination register at end
+                lsr.l   #1, d2
+                lsr.l   #8, d2      * shift right to get destination register at end
                 add.l   d2, d6      * combine destination mode and regiser
                 
                 * get source EA
-                clr     d7
+                clr.l   d7
                 move.w  d1, d7      * load instruction into source EA parameter
-                and     #%0000000000111111, d7  * get source ea
+                and.l   #%0000000000111111, d7  * get source EA
                 
                 * At this point: d7 contains source EA and d6 contains destination EA
                 * we set d5 = 1 since we have to print destination and source
                 move.l  #1, d5
-                
-                bsr     printer     * execute EA printer
-                
-                bsr     print_nl    * print line break
+                bsr     handle_ea
                 
                 addq    #$2, a0     * go to next opcode word
 * ---- exit                
@@ -228,7 +249,6 @@ op_moveq        move.w  sr, -(sp)
                 rol.w   #7, d7  *rotate to left to get register number at end
               
                 bsr     moveq_printer
-                
                 bsr     print_nl
                 
                 addq    #$2, a0
@@ -266,8 +286,7 @@ op_movem        move.w  sr, -(sp)
                 rol     #6, d6  *rotate left 6 times to get direction at the end     
 
                 bsr     movem_printer
-                
-                bsr     print_nl *print line break
+                bsr     print_nl
                 
                 addq    #$4, a0 *add 4 to skip after data word
 * ---- exit                
@@ -311,9 +330,7 @@ op_movea        move.w  sr, -(sp)
                 *we set d5 = 1 since we have to print destination and source
                 move.l  #1, d5
                 
-                bsr     printer     *execute EA printer
-                
-                bsr     print_nl    *print line break
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -366,9 +383,7 @@ op_add          move.w  sr, -(sp)
                 move.l  d4, d6
                 
 print_add       
-                bsr     printer
-                
-                bsr     print_nl    *print line break
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -408,9 +423,7 @@ op_adda         move.w  sr, -(sp)
                 move.w  (a0), d7
                 andi.l  #%0000000000111111, d7
 
-                bsr     printer
-                
-                bsr     print_nl
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -440,7 +453,6 @@ op_addq         move.w  sr, -(sp)
                 andi    #%0000000000111111, d7
                 
                 bsr     addq_printer
-                
                 bsr     print_nl
                 
                 addq    #$2, a0
@@ -494,8 +506,7 @@ op_sub          move.w  sr, -(sp)
                 move.l  d4, d6
                 
 print_sub       
-                bsr     printer
-                bsr     print_nl    *print line break
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -535,8 +546,7 @@ op_lea          move.w  sr, -(sp)
                 add     #%1, d6 *add 1 to indicate An reg mode
                 rol.w   #3, d6  *rotate to get the reg bits as LSB
                 
-                bsr     printer
-                bsr     print_nl
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -589,10 +599,7 @@ op_and          move.w  sr, -(sp)
                 move.l  d4, d6
                 
 print_and       
-                bsr     printer
-                
-                bsr     print_nl    *print line break
-
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -644,8 +651,7 @@ op_or           move.w  sr, -(sp)
                 move.l  d4, d6
                 
 print_or       
-                bsr     printer
-                bsr     print_nl    *print line break
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -673,8 +679,7 @@ op_not          move.w  sr, -(sp)
                 move.w  (a0), d7
                 andi    #%0000000000111111, d7 *mask to get bits 0-5
                 
-                bsr     printer
-                bsr     print_nl
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -774,9 +779,7 @@ op_jsr          move.w  sr, -(sp)
                 move.w  (a0), d7
                 andi.w  #%0000000000111111, d7 *get EA mode and reg
                 
-                bsr     printer
-                
-                bsr     print_nl
+                bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -800,7 +803,7 @@ op_rts          move.w  sr, -(sp)
                 trap    #15
                 
                 addq    #$2, a0
-* ---- exit                
+* ---- exit
 op_rts_x        movem.l (sp)+, reglist_rts
                 rtr
 
@@ -823,13 +826,18 @@ op_rts_x        movem.l (sp)+, reglist_rts
 *                trap    #15
 *                
 *                addq    #$2, a0
-** ---- exit                
+** ---- exit
 *op_bra_x        movem.l (sp)+, reglist_bra
 *                rtr
 
 * ==== constants and variables ====
 
-* messages
+* size messages
+msg_size_b      dc.w    '.B',0
+msg_size_w      dc.w    '.W',0
+msg_size_l      dc.w    '.L',0
+
+* instruction messages
 msg_data        dc.w    'DATA',0
 msg_nop         dc.w    'NOP',0
 msg_move        dc.w    'MOVE',0
@@ -888,6 +896,8 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
+
 
 
 
