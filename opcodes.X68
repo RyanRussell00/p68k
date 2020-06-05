@@ -697,7 +697,7 @@ op_xsd          move.w  sr, -(sp)
                 lea     msg_xsd, a1
                 trap    #15
                 
-                * ToDo: Op printing and EA printing
+                * ToDo: Op printing
                 
                 *if bits 3 and 4 hold 1 and 0, respectively, we are shifting immediate
                 clr     d7 *print param
@@ -712,16 +712,16 @@ op_xsd          move.w  sr, -(sp)
                 *if not printing shift by 1, go to printer subroutine to handle printing
                 bsr     shift_rotate_printer
                 bsr     print_nl
+                bra     op_xsd_x
                 
 xsd_one_bit     *print only 1 EA since shifting by 1 bit
                 move.w  (a0), d7
                 andi.b  #%00111111, d7 *only get last 6 bits
                 bsr     printer
                 bsr     print_nl
-                
-                addq    #$2, a0
 * ---- exit                
-op_xsd_x        movem.l (sp)+, reglist_xsd
+op_xsd_x        addq    #$2, a0
+                movem.l (sp)+, reglist_xsd
                 rtr
 
 *-----------------------------------------------------------
@@ -736,15 +736,37 @@ op_rod          move.w  sr, -(sp)
                 movem.l reglist_rod, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_rod, a1
                 trap    #15
                 
-                * ToDo: Op printing and EA printing
+                * ToDo: Op printing
                 
-                addq    #$2, a0
+                *if bits 3 and 4 hold 1 and 0, respectively, we are shifting immediate
+                clr     d7 *print param
+                clr     d5 *print param
+                clr     d3 *temp
+                move.w  (a0), d3
+                *if bits 7-6 = 11 then we are only printing 1 EA
+                andi.b  #%11000000, d3
+                cmpi.b  #%11000000, d3
+                beq     rod_one_bit
+                
+                *if not printing shift by 1, go to printer subroutine to handle printing
+                bsr     shift_rotate_printer
+                bsr     print_nl
+                bra     op_rod_x
+                
+rod_one_bit     *print only 1 EA since shifting by 1 bit
+                move.w  (a0), d7
+                andi.b  #%00111111, d7 *only get last 6 bits
+                bsr     printer
+                bsr     print_nl
+                
+                
 * ---- exit                
-op_rod_x        movem.l (sp)+, reglist_rod
+op_rod_x        addq    #$2, a0
+                movem.l (sp)+, reglist_rod
                 rtr
 
 *-----------------------------------------------------------

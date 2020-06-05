@@ -443,17 +443,25 @@ gre_skip0:
                 * ROd detection
                 move.w  d7, d6
                 andi.w  #%111011000000, d6 * clear all bits but 11-9, 7-6
-                cmpi.w  #%010011000000, d6 * check if bits 11-9 = 011, bits 7-6 = 11
+                cmpi.w  #%011011000000, d6 * check if bits 11-9 = 011, bits 7-6 = 11
                 bne     gre_skip1
                 bsr     op_rod * it's ROd
                 bra     read_gre_x
                 
 gre_skip1:      
-                * ROd detection
+                * Second ROd detection
+                * ROd happens when bits 7-6 != 11 and 4-3 = 11
                 move.w  d7, d6
-                andi.w  #%11000, d6 * clear all bits but 4-3
-                cmpi.w  #%11000, d6 * check if bits 4-3 = 11
-                bne     gre_skip2
+                andi.w  #%11000000, d6 * clear all bits but 7-6
+                cmpi.w  #%11000000, d6 * check if bits 4-3 = 11
+                beq     gre_skip2 *since bits 7-6 = 11 and it didnt meet ROd first test above, its shift
+                
+                *if bits 7-6 != 11, check if bits 4-3 = 11
+                move.w  d7, d6
+                andi.w  #%11000, d6
+                cmpi.w  #%11000, d6
+                *if bits 4-3 = 11 we have ROd, else: shift
+                bne     gre_skip2   *if 4-3 != 11, go to shift
                 bsr     op_rod * it's ROd
                 bra     read_gre_x
 
@@ -496,6 +504,7 @@ groups:         jmp     jump_notfound   * group 0 not needed
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
 
 
 

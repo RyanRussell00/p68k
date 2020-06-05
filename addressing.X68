@@ -57,17 +57,17 @@ is_decrmnt      cmp.l   #%100000, d2 *pre decrement address register
                  
 is_immdte       *Use entire 6 bits for absolute and immediate since we need last 3 bits
                 move.l  d7, d2      *reset the temp variable with original value
-                cmp     #%111100, d2 *immediate
+                cmp.b   #%111100, d2 *immediate
                 bne     is_abs_w     *if not equal, try next
                 bsr     immdte       
                 bra     printer_x
 
-is_abs_w        cmp.l   #%111000, d2 *absolute word
+is_abs_w        cmp.b   #%111000, d2 *absolute word
                 bne     is_abs_l     *if not equal, try next
                 bsr     abs
                 bra     printer_x
 
-is_abs_l        cmp.l   #%00111001, d2 *absolute long
+is_abs_l        cmp.b   #%111001, d2 *absolute long
                 bne     invalid_ea
                 bsr     abs
                 bra     printer_x
@@ -532,60 +532,60 @@ data_reg        move.w  sr, -(sp) * save CCR to stack
                 
                 move.l  d7, d1          *Save the contents of original val in a temp registry
                 and.b   #%111000, d7    *if the first 3 bits is 000 it will save 000000
-                cmp     #%0, d7         *if 0 then we have a data register addressing mode
+                cmpi.b  #%0, d7         *if 0 then we have a data register addressing mode
                 bne     data_reg_x      *if first 3 bits not 000, exit subroutine
        
-print_d0        cmp     #%000000, d1    *compare to see if d0
+print_d0        cmpi.b  #%000000, d1    *compare to see if d0
                 bne     print_d1        *if not d0 try d1
                 lea     direct_data_0, a1   *load the message for d0
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     data_reg_x  *exit the subroutine
  
-print_d1        cmp     #%000001, d1    *compare to see if d1
+print_d1        cmpi.b  #%000001, d1    *compare to see if d1
                 bne     print_d2        *if not, try next
                 lea     direct_data_1, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     data_reg_x  *exit the subroutine
                 
-print_d2        cmp     #%000010, d1    *compare to see if d2
+print_d2        cmpi.b  #%000010, d1    *compare to see if d2
                 bne     print_d3        *if not, try next
                 lea     direct_data_2, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     data_reg_x  *exit the subroutine
                 
-print_d3        cmp     #%000011, d1    *compare to see if d3
+print_d3        cmpi.b  #%000011, d1    *compare to see if d3
                 bne     print_d4        *if not, try next
                 lea     direct_data_3, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     data_reg_x  *exit the subroutine
 
-print_d4        cmp     #%000100, d1    *compare to see if d4
+print_d4        cmpi.b  #%000100, d1    *compare to see if d4
                 bne     print_d5        *if not, try next
                 lea     direct_data_4, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     data_reg_x  *exit the subroutine
                 
-print_d5        cmp     #%000101, d1    *compare to see if d5
+print_d5        cmpi.b  #%000101, d1    *compare to see if d5
                 bne     print_d6        *if not, try next
                 lea     direct_data_5, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     data_reg_x  *exit the subroutine
                 
-print_d6        cmp     #%000110, d1    *compare to see if d6
+print_d6        cmpi.b  #%000110, d1    *compare to see if d6
                 bne     print_d7        *if not, try next
                 lea     direct_data_6, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen     
                 bra     data_reg_x  *exit the subroutine
 
-print_d7        cmp     #%000111, d1    *compare to see if d7
-                bne     invalid_ea  *if not, try next
+print_d7        cmpi.b  #%000111, d1    *compare to see if d7
+                bne     data_reg_x  *if not, try next
                 lea     direct_data_7, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
@@ -608,60 +608,60 @@ addr_reg        move.w  sr, -(sp)    * save CCR to stack
                 
                 move.l  d7, d1          *Save the contents in a temp registry
                 and.b   #%111000, d7    *mask opmode to expected opmode
-                cmp     #%001000, d7    *check mask result to make its expected
+                cmpi.b  #%001000, d7    *check mask result to make its expected
                 bne     addr_reg_x      *if not expected, exit subroutine
        
-print_a0        cmp     #%001000, d1    *compare to see if d0
+print_a0        cmpi.b  #%001000, d1    *compare to see if d0
                 bne     print_a1        *if not d0 try d1
                 lea     direct_addr_0, a1   *load the message for d0
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     addr_reg_x  *exit the subroutine
  
-print_a1        cmp     #%001001, d1    *compare to see if d1
+print_a1        cmpi.b  #%001001, d1    *compare to see if d1
                 bne     print_a2        *if not, try next
                 lea     direct_addr_1, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     addr_reg_x  *exit the subroutine
                 
-print_a2        cmp     #%001010, d1    *compare to see if d2
+print_a2        cmpi.b  #%001010, d1    *compare to see if d2
                 bne     print_a3        *if not, try next
                 lea     direct_addr_2, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     addr_reg_x  *exit the subroutine
                 
-print_a3        cmp     #%001011, d1    *compare to see if d3
+print_a3        cmpi.b  #%001011, d1    *compare to see if d3
                 bne     print_a4        *if not, try next
                 lea     direct_addr_3, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     addr_reg_x  *exit the subroutine
 
-print_a4        cmp     #%001100, d1    *compare to see if d4
+print_a4        cmpi.b  #%001100, d1    *compare to see if d4
                 bne     print_a5        *if not, try next
                 lea     direct_addr_4, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     addr_reg_x  *exit the subroutine
                 
-print_a5        cmp     #%001101, d1    *compare to see if d5
+print_a5        cmpi.b  #%001101, d1    *compare to see if d5
                 bne     print_a6        *if not, try next
                 lea     direct_addr_5, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     addr_reg_x  *exit the subroutine
                 
-print_a6        cmp     #%001110, d1    *compare to see if d6
+print_a6        cmpi.b  #%001110, d1    *compare to see if d6
                 bne     print_a7        *if not, try next
                 lea     direct_addr_6, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen     
                 bra     addr_reg_x  *exit the subroutine
 
-print_a7        cmp     #%001111, d1    *compare to see if d7
-                bne     invalid_ea  *if not, try next
+print_a7        cmpi.b  #%001111, d1    *compare to see if d7
+                bne     addr_reg_x  *if not, try next
                 lea     direct_addr_7, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
@@ -737,7 +737,7 @@ print_ind_a6    cmpi.b  #%010110, d1    *compare to see if d6
                 bra     ind_addr_reg_x  *exit the subroutine
 
 print_ind_a7    cmpi.b  #%010111, d1    *compare to see if d7
-                bne     invalid_ea  *if not, try next
+                bne     ind_addr_reg_x  *if not, try next
                 lea     indirect_addr_7, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
@@ -760,59 +760,59 @@ inc_addr_reg    move.w  sr, -(sp)    * save CCR to stack
                 
                 move.l  d7, d1          *Save the contents of d0 in a temp registry
                 and.b   #%111000, d7    *mask opmode to expected opmode
-                cmp     #%011000, d7    *check mask result to make its expected
+                cmpi.b  #%011000, d7    *check mask result to make its expected
                 bne     inc_addr_reg_x      *if not expected, exit subroutine
        
-print_inc_a0    cmp     #%011000, d1    *compare to see if d0
+print_inc_a0    cmpi.b  #%011000, d1    *compare to see if d0
                 bne     print_inc_a1        *if not d0 try d1
                 lea     incrmnt_addr_0, a1   *load the message for d0
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     inc_addr_reg_x  *exit the subroutine
  
-print_inc_a1    cmp     #%011001, d1    *compare to see if d1
+print_inc_a1    cmpi.b  #%011001, d1    *compare to see if d1
                 bne     print_inc_a2        *if not, try next
                 lea     incrmnt_addr_1, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     inc_addr_reg_x  *exit the subroutine
                 
-print_inc_a2    cmp     #%011010, d1    *compare to see if d2
+print_inc_a2    cmpi.b  #%011010, d1    *compare to see if d2
                 bne     print_inc_a3        *if not, try next
                 lea     incrmnt_addr_2, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     inc_addr_reg_x  *exit the subroutine
                 
-print_inc_a3    cmp     #%011011, d1    *compare to see if d3
+print_inc_a3    cmpi.b  #%011011, d1    *compare to see if d3
                 bne     print_inc_a4        *if not, try next
                 lea     incrmnt_addr_3, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     inc_addr_reg_x  *exit the subroutine
 
-print_inc_a4    cmp     #%011100, d1    *compare to see if d4
+print_inc_a4    cmpi.b  #%011100, d1    *compare to see if d4
                 bne     print_inc_a5        *if not, try next
                 lea     incrmnt_addr_4, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     ind_addr_reg_x  *exit the subroutine
                 
-print_inc_a5    cmp     #%011101, d1    *compare to see if d5
+print_inc_a5    cmpi.b  #%011101, d1    *compare to see if d5
                 bne     print_inc_a6        *if not, try next
                 lea     incrmnt_addr_5, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     ind_addr_reg_x  *exit the subroutine
                 
-print_inc_a6    cmp     #%011110, d1    *compare to see if d6
+print_inc_a6    cmpi.b  #%011110, d1    *compare to see if d6
                 bne     print_inc_a7        *if not, try next
                 lea     incrmnt_addr_6, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen     
                 bra     ind_addr_reg_x  *exit the subroutine
 
-print_inc_a7    cmp     #%011111, d1    *compare to see if d7
+print_inc_a7    cmpi.b  #%011111, d1    *compare to see if d7
                 bne     inc_addr_reg_x  *if not, try next
                 lea     incrmnt_addr_7, a1   *load the message
                 move.b  #14, d0         *set trap
@@ -836,60 +836,60 @@ dec_addr_reg    move.w  sr, -(sp)    * save CCR to stack
                 
                 move.l  d7, d1          *Save the contents of d0 in a temp registry
                 and.b   #%111000, d7    *mask opmode to expected opmode
-                cmp     #%100000, d7    *check mask result to make its expected
+                cmpi.b  #%100000, d7    *check mask result to make its expected
                 bne     dec_addr_reg_x      *if not expected, exit subroutine
        
-print_dec_a0    cmp     #%100000, d1    *compare to see if d0
+print_dec_a0    cmpi.b  #%100000, d1    *compare to see if d0
                 bne     print_dec_a1        *if not d0 try d1
                 lea     decrmnt_addr_0, a1   *load the message for d0
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     dec_addr_reg_x  *exit the subroutine
  
-print_dec_a1    cmp     #%100001, d1    *compare to see if d1
+print_dec_a1    cmpi.b  #%100001, d1    *compare to see if d1
                 bne     print_dec_a2        *if not, try next
                 lea     decrmnt_addr_1, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     inc_addr_reg_x  *exit the subroutine
                 
-print_dec_a2    cmp     #%100010, d1    *compare to see if d2
+print_dec_a2    cmpi.b  #%100010, d1    *compare to see if d2
                 bne     print_dec_a3        *if not, try next
                 lea     decrmnt_addr_2, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     dec_addr_reg_x  *exit the subroutine
                 
-print_dec_a3    cmp     #%100011, d1    *compare to see if d3
+print_dec_a3    cmpi.b  #%100011, d1    *compare to see if d3
                 bne     print_dec_a4        *if not, try next
                 lea     decrmnt_addr_3, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     dec_addr_reg_x  *exit the subroutine
 
-print_dec_a4    cmp     #%100100, d1    *compare to see if d4
+print_dec_a4    cmpi.b  #%100100, d1    *compare to see if d4
                 bne     print_dec_a5        *if not, try next
                 lea     decrmnt_addr_4, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     dec_addr_reg_x  *exit the subroutine
                 
-print_dec_a5    cmp     #%100101, d1    *compare to see if d5
+print_dec_a5    cmpi.b  #%100101, d1    *compare to see if d5
                 bne     print_dec_a6        *if not, try next
                 lea     decrmnt_addr_5, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     dec_addr_reg_x  *exit the subroutine
                 
-print_dec_a6    cmp     #%100110, d1    *compare to see if d6
+print_dec_a6    cmpi.b  #%100110, d1    *compare to see if d6
                 bne     print_dec_a7        *if not, try next
                 lea     decrmnt_addr_6, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen     
                 bra     dec_addr_reg_x  *exit the subroutine
 
-print_dec_a7    cmp     #%100111, d1    *compare to see if d7
-                bne     dec_addr_reg_x  *if not, try next
+print_dec_a7    cmpi.b  #%100111, d1    *compare to see if d7
+                bne     dec_addr_reg_x *if not, try next
                 lea     decrmnt_addr_7, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
@@ -912,7 +912,7 @@ immdte          move.w  sr, -(sp)        * save CCR to stack
                 movem.l rl_immdte, -(sp) * save current regs to stack
 * ---- subroutine code:
                 
-                cmp     #%111100, d7     *check op to ensure its expected
+                cmpi.b  #%111100, d7     *check op to ensure its expected
                 bne     immdte_x         *if not expected, exit subroutine
                 
                 lea     pound_sign, a1  *load the pound sign to print
@@ -951,10 +951,10 @@ abs             move.w  sr, -(sp)       * save CCR to stack
 
 * ---- subroutine code:
                 
-                cmp     #%111000, d7    *check op to see if abs short
+                cmpi.b  #%111000, d7    *check op to see if abs short
                 beq     abs_short
                 
-                cmp     #%111001, d7    *check op to see if abs long
+                cmpi.b  #%111001, d7    *check op to see if abs long
                 bne     abs_x           *if not, exit
                 
 abs_long        
@@ -990,107 +990,6 @@ abs_short
 abs_x   		movem.l (sp)+, rl_abs *restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
-
-
-
-*-----------------------------------------------------------
-* //// reset printer
-* parameters:
-*   d7 - source ea
-*   d6 - destination ea
-*   d5 - destination exists flag
-*   a0 - opcode address
-* return:
-*   clears all parameters
-*
-*rl_reset_printer reg     a1-a6/d0-d4 * every reg except parameters/return
-*reset_printer    move.w  sr, -(sp) * save CCR to stack
-*                 movem.l rl_reset_printer, -(sp) * save current regs to stack
-** ---- subroutine code:
-*                
-*                clr     d7
-*                clr     d6
-*                clr     d5
-*                clr     (a0)
-*                
-** ---- exit        
-*reset_printer_x movem.l (sp)+, rl_reset_printer * restore old registers
-*                rtr * restore CCR, exit subroutine
-*-----------------------------------------------------------
-
-**-----------------------------------------------------------
-** //// print long (32 bits) as hex digit
-** parameters:
-**   d1 - contains word to print as hex
-** return:
-**   none
-**
-*rl_print_hex_l  reg     a0-a6/d0-d7
-*print_hex_l     move.w  sr, -(sp)
-*                movem.l rl_print_hex_l, -(sp)
-** ---- subroutine code:
-*                
-*                swap    d1              *flip long or else it prints in reverse
-*                bsr     print_hex_w     *print first half of long
-*                swap    d1              *flip first half of register to second half
-*                bsr     print_hex_w     *print rest of long
-*                
-** ---- exit
-*print_hex_l_x   movem.l (sp)+, rl_print_hex_l
-*                rtr
-**-----------------------------------------------------------                
-
-**-----------------------------------------------------------
-** //// print word (16 bits) as hex digit
-** parameters:
-**   d1 - contains word to print as hex
-** return:
-**   none
-**
-*rl_print_hex_w  reg     a0-a6/d0-d7
-*print_hex_w     move.w  sr, -(sp)
-*                movem.l rl_print_hex_w, -(sp)
-** ---- subroutine code:
-*                
-*                rol.w   #$4, d1 * rotate first 4 bits to last 4 bits
-*                bsr     print_hex_n
-*                rol.w   #$4, d1
-*                bsr     print_hex_n
-*                rol.w   #$4, d1
-*                bsr     print_hex_n
-*                rol.w   #$4, d1
-*                bsr     print_hex_n
-*                
-** ---- exit
-*print_hex_w_x   movem.l (sp)+, rl_print_hex_w
-*                rtr
-**-----------------------------------------------------------
-
-**-----------------------------------------------------------
-** //// print nibble (4 bits) as hex digit
-** parameters:
-**   d1 - contains nibble to print as hex
-** return:
-**   none
-**
-*rl_print_hex_n  reg     a0-a6/d0-d7
-*print_hex_n     move.w  sr, -(sp)
-*                movem.l rl_print_hex_n, -(sp)
-** ---- subroutine code:
-*                
-*                andi.b  #%00001111, d1 * clear first 4 bits
-*                addi.b  #$30, d1 * ASCII offset to start at char 0
-*                cmpi.b  #$39, d1 * check if above ASCII $39
-*                ble     pr_hn_skip1 * hex $0-9 can be safely printed
-*                addi.b  #$7, d1 * hex $A-F needs another ASCII offset
-*                
-*pr_hn_skip1     move.b  #6, d0 * display char at d1.b
-*                trap    #15
-*                
-** ---- exit
-*print_hex_n_x   movem.l (sp)+, rl_print_hex_n
-*                rtr
-**-----------------------------------------------------------
 
 *-----------------------------------------------------------
 * //// print comma

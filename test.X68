@@ -16,7 +16,26 @@ top
              ROXL   (a5) *invalid
              ROXR   (a2) *invalid
              lsl    (a1)
+             asl    -(a0)
+             asl    (a7)+
+             asr    $1245
+             asl    $12349876
              lsr    #2, d2
+             lsl    #1, d0
+             asl    #8, d7
+             lsr    #4, d5
+             
+             ror    (a3)
+             ror    (a0)+
+             ror    -(a7)
+             rol    $3333
+             rol    $12346789
+             rol    #1, d0
+             rol    #5, d5
+             rol    #8, d7
+             
+                
+             
              
              addq   #4, d0
              not    (a0)
