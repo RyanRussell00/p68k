@@ -346,6 +346,7 @@ op_movea        move.w  sr, -(sp)
                 move.l  #1, d5
                 
                 move.b  (ea_movea_s), d3
+                move.b  (ea_movea_d), d2
                 bsr     handle_ea
                 
                 addq    #$2, a0
@@ -436,7 +437,8 @@ op_adda         move.w  sr, -(sp)
                 move.w  (a0), d7
                 andi.l  #%0000000000111111, d7
                 
-                move.b  (ea_add_s), d3
+                move.b  (ea_adda_s), d3
+                move.b  (ea_adda_d), d2
                 bsr     handle_ea
                 
                 addq    #$2, a0
@@ -561,6 +563,7 @@ op_lea          move.w  sr, -(sp)
                 rol.w   #3, d6  *rotate to get the reg bits as LSB
                 
                 move.b  (ea_lea_s), d3
+                move.b  (ea_lea_d), d2
                 bsr     handle_ea
                 
                 addq    #$2, a0
@@ -901,18 +904,22 @@ ea_adda_s       dc.b    %11111111
 
 * EA validation destination lists
 ea_move_d       dc.b    %10111110
+ea_movea_d      dc.b    %01000000
 ea_movem_d      dc.b    %00101110
+ea_lea_d        dc.b    %01000000
 ea_addq_d       dc.b    %11111110
 ea_or_d         dc.b    %10111110
 ea_sub_d        dc.b    %10111110
 ea_and_d        dc.b    %10111110
 ea_add_d        dc.b    %10111110
+ea_adda_d       dc.b    %01000000
 ea_lsd_d        dc.b    %10111110
 ea_asd_d        dc.b    %10111110
 ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 
