@@ -716,7 +716,7 @@ op_xsd          move.w  sr, -(sp)
 xsd_one_bit     *print only 1 EA since shifting by 1 bit
                 move.w  (a0), d7
                 andi.b  #%00111111, d7 *only get last 6 bits
-                bra     printer
+                bsr     printer
                 bsr     print_nl
                 
                 addq    #$2, a0
@@ -907,6 +907,7 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 
