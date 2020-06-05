@@ -15,6 +15,8 @@ top
 
              ROXL   (a5) *invalid
              ROXR   (a2) *invalid
+             ROXL   #2, d5 *invalid
+             ROXR   #7, d7 *invalid
              lsl    (a1)
              asl    -(a0)
              asl    (a7)+
