@@ -193,6 +193,7 @@ reg_list_printer move.w  sr, -(sp)
                 move.l  d5, d1      *copy counter to d1 cause Im too lazy to change the code below
 
                 cmpi.b  #1, d4      *if predecrement do 15 - counter
+                
                 bne     print_a0_list
                 *for predecrement only:
                 *subtract 15 from d1

@@ -53,7 +53,7 @@ read_loop_x * loop exit
 * ==== utility subroutines ====
 
 *-----------------------------------------------------------
-* //// wait for user to press any key
+* //// wait for user to press enter
 * parameters:
 *   none
 * return:
@@ -70,7 +70,6 @@ wait_user       move.w  sr, -(sp)
                 
                 move.b  #5, d0 * read character from keyboard
                 trap    #15
-                
 * ---- exit
 wait_user_x     movem.l (sp)+, rl_wait_user
                 rtr
@@ -259,7 +258,7 @@ print_logo_x    movem.l (sp)+, rl_print_logo
 num_first_lines equ     0 * num of lines printed before the main loop
 screen_limit    equ     31 * lines that can fit on the screen
 
-msg_wait        dc.w    'Press any key to continue... ',0
+msg_wait        dc.w    '>>> Press [Enter] to continue... ',0
 
 input_pt1       dc.w    'Please enter an even ',0
 input_pt2       dc.w    ' address between (',0
@@ -297,10 +296,6 @@ indent          dc.w    HT,HT,0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
-
-
-
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
