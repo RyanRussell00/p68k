@@ -144,6 +144,83 @@ dest_good       exg     d6, d7 * swap back parameters
 valid_both_x    movem.l (sp)+, rl_valid_both
                 rtr
 
+* ==== utility subroutines ====
+
+*-----------------------------------------------------------
+* //// print instruction size
+* parameters:
+*   d1 - %00 for B, %01 for W, %10 for L
+* return:
+*   d1 - if parameter was %11, sets d1.b to $FF for failure
+*
+rl_print_size   reg     a0-a6/d0/d2-d7
+print_size      move.w  sr, -(sp)
+                movem.l rl_print_size, -(sp)
+* ---- subroutine code:
+                
+                move.b  #14, d0 * for printing without newline
+                andi.b  #%11, d1
+                
+                cmpi.b  #%10, d1
+                bne     size_not_long
+                
+                lea     msg_size_l, a1 * print .L
+                trap    #15
+                bra     print_size_x
+                
+size_not_long   cmpi.b  #%01, d1
+                bne     size_not_word
+                
+                lea     msg_size_w, a1 * print .W
+                trap    #15
+                bra     print_size_x
+                
+size_not_word   cmpi.b  #%00, d1
+                bne     size_invalid
+                
+                lea     msg_size_b, a1 * print .B
+                trap    #15
+                bra     print_size_x
+                
+size_invalid    move.b  #$FF, d1 * size is %11, invalid
+                
+* ---- exit
+print_size_x    movem.l (sp)+, rl_print_size
+                rtr
+
+*-----------------------------------------------------------
+* //// print instruction size for MOVE
+* parameters:
+*   d1 - %01 for B, %11 for W, %10 for L
+* return:
+*   d1 - if parameter was %11, sets d1.b to $FF for failure
+*
+rl_print_m_s    reg     a0-a6/d0/d2-d7
+print_mv_size   move.w  sr, -(sp)
+                movem.l rl_print_m_s, -(sp)
+* ---- subroutine code:
+                
+                andi.b  #%11, d1 * leave only last 2 bits
+                
+                cmpi.b  #%10, d1
+                beq     go_print_size * size is MOVE.L
+                
+                cmpi.b  #%11, d1
+                bne     mv_size_b
+                
+                move.b  #%01, d1 * size is MOVE.W
+                bra     go_print_size
+                
+mv_size_b       move.b  #%00, d1 * size is MOVE.B
+                
+                * note: MOVE will never send a bad size
+                * because opcode detection would not allow it
+                
+go_print_size   bsr     print_size
+                
+* ---- exit
+print_mv_size_x movem.l (sp)+, rl_print_m_s
+                rtr
 
 * ==== opcode subroutines ====
 
@@ -919,6 +996,7 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 
