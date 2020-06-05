@@ -2,7 +2,7 @@
 * Title      : Team 68++ Disassembler
 * Written by : Boyan Hristov, Phillip Ovanesyan, Ryan Russell
 * Date       : April 10th, 2020
-* Description: This is a disassembler written for CSS 422 B.
+* Description: This is a disassrembler written for CSS 422 B.
 *-----------------------------------------------------------
 org_main        equ     $1000
 org_stack       equ     $A000
@@ -296,11 +296,6 @@ indent          dc.w    HT,HT,0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
-
-
-
-
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

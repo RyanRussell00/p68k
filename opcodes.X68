@@ -793,17 +793,57 @@ reglist_xsd     reg     a1-a6/d0-d7
 op_xsd          move.w  sr, -(sp)
                 movem.l reglist_xsd, -(sp)
 * ---- handle the opcode:
+              
+                *get direction of shift (0 = Right, 1 = Left)
+                clr     d2 *temp
+                clr     d3 *store direction
                 
-                * ToDo: change 13 to 14 to print without newline
-                move.b  #13, d0
-                lea     msg_xsd, a1
+                move.w  (a0), d3
+                andi.w  #%0000000100000000, d3
+                *rotate right 8 times to get direction bit as LSB
+                asr.w   #8, d3
+                *d3 now holds the direction bit
+                
+                *get type of shift (ASd or LSd)
+                move.w  (a0), d2
+                move.b  #14, d0 *prepare task trigger
+                
+                andi.w  #%0000111000000000, d2
+
+print_asd_right
+                cmpi.w  #%0, d2 *if 0, printing ASd
+                bne     print_lsd_left                
+                cmpi.b  #0, d3  *if direction = Right
+                bne     print_asd_left
+                *print ASR
+                lea     msg_asr, a1
                 trap    #15
+                bra     shift_ea
+print_asd_left
+                *print ASL
+                lea     msg_asl, a1
+                trap    #15
+                bra     shift_ea
                 
-                * ToDo: Op printing and EA printing
+print_lsd_left
+                cmpi.b  #1, d3  *if direction = Right
+                bne     print_lsd_right
+                *print LSL
+                lea     msg_lsl, a1
+                trap    #15
+                bra     shift_ea
+
+print_lsd_right
+                *print LSR
+                lea     msg_lsr, a1
+                trap    #15
+                bra     shift_ea                
                 
-                addq    #$2, a0
+shift_ea
+                bsr     shift_rotate_printer
 * ---- exit                
-op_xsd_x        movem.l (sp)+, reglist_xsd
+op_xsd_x        addq    #$2, a0
+                movem.l (sp)+, reglist_xsd
                 rtr
 
 *-----------------------------------------------------------
@@ -818,15 +858,32 @@ op_rod          move.w  sr, -(sp)
                 movem.l reglist_rod, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #13, d0
-                lea     msg_rod, a1
+                move.b  #14, d0 *prepare task trigger
+                
+                *store direction
+                clr     d3
+                move.w  (a0), d3
+                andi.w  #%0000000100000000, d3
+                asr.w   #8, d3
+                
+                *if 0, print right
+                cmpi.b  #0, d3
+                bne     rod_left
+                lea     msg_ror, a1
                 trap    #15
+                bra     ror_ea
                 
-                * ToDo: Op printing and EA printing
+rod_left
+                lea     msg_rol, a1
+                trap    #15
+                bra     ror_ea
                 
-                addq    #$2, a0
+ror_ea               
+                bsr     shift_rotate_printer
+                
 * ---- exit                
-op_rod_x        movem.l (sp)+, reglist_rod
+op_rod_x        addq    #$2, a0
+                movem.l (sp)+, reglist_rod
                 rtr
 
 *-----------------------------------------------------------
@@ -949,8 +1006,12 @@ msg_lea         dc.w    'LEA',0
 msg_and         dc.w    'AND',0
 msg_or          dc.w    'OR',0
 msg_not         dc.w    'NOT',0
-msg_xsd         dc.w    'xSd',0
-msg_rod         dc.w    'ROd',0
+msg_asr         dc.w    'ASR',0
+msg_asl         dc.w    'ASL',0
+msg_lsr         dc.w    'LSR',0
+msg_lsl         dc.w    'LSL',0
+msg_rol         dc.w    'ROL',0
+msg_ror         dc.w    'ROR',0
 msg_bcc         dc.w    'Bcc',0
 msg_jsr         dc.w    'JSR',0
 msg_rts         dc.w    'RTS',0
@@ -996,19 +1057,6 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

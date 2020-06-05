@@ -423,32 +423,45 @@ read_gre        move.w  sr, -(sp)
                 
                 * ROXd rejection
                 move.w  d7, d6
-                andi.w  #%111011000000, d6 * clear all bits but 11-9, 7-6
-                cmpi.w  #%010011000000, d6 * check if bits 11-9 = 010, bits 7-6 = 11
+                andi.w  #%0000111011000000, d6 * clear all bits but 11-9, 7-6
+                cmpi.w  #%0000010011000000, d6 * check if bits 11-9 = 010, bits 7-6 = 11
                 * if bits 11-9 = 010 and bits 7-6 = 11,
                 * ignore because it's ROXd which is unsupported
                 beq     gre_skip3
-                
+                *second condition that could be ROXd when bits 7-6 != 11 and bits 4-3 = 10
                 move.w  d7, d6
-                andi.w  #%11000, d6 * clear all bits but 4-3
-                cmpi.w  #%10000, d6 * check if bits 4-3 = 10
-                * if bits 4-3 = 10,
-                * ignore because it's ROXd which is unsupported
-                beq     gre_skip3
-                
+                *check for bits 7-6 != 11 first
+                andi.w  #%0000000011000000, d6 * clear all bits but 7-6
+                cmpi.w  #%0000000011000000, d6 *if 11, it is not ROXd
+                beq     gre_skip0   *since it is 11, it can not be ROXd
+                *if not 11, then check bits 4-3 for 10
+                move.w  d7, d6
+                andi.w  #%0000000000011000, d6
+                cmpi.w  #%0000000000010000, d6
+                beq     gre_skip3   *if bits 3-4 are 10, then we have ROXd which is not supported
+gre_skip0:
                 * ROd detection
                 move.w  d7, d6
                 andi.w  #%111011000000, d6 * clear all bits but 11-9, 7-6
-                cmpi.w  #%010011000000, d6 * check if bits 11-9 = 011, bits 7-6 = 11
+                cmpi.w  #%011011000000, d6 * check if bits 11-9 = 011, bits 7-6 = 11
                 bne     gre_skip1
                 bsr     op_rod * it's ROd
                 bra     read_gre_x
                 
-gre_skip1:      * ROd detection
+gre_skip1:      
+                * Second ROd detection
+                * ROd happens when bits 7-6 != 11 and 4-3 = 11
                 move.w  d7, d6
-                andi.w  #%11000, d6 * clear all bits but 4-3
-                cmpi.w  #%11000, d6 * check if bits 4-3 = 11
-                bne     gre_skip2
+                andi.w  #%11000000, d6 * clear all bits but 7-6
+                cmpi.w  #%11000000, d6 * check if bits 4-3 = 11
+                beq     gre_skip2 *since bits 7-6 = 11 and it didnt meet ROd first test above, its shift
+                
+                *if bits 7-6 != 11, check if bits 4-3 = 11
+                move.w  d7, d6
+                andi.w  #%11000, d6
+                cmpi.w  #%11000, d6
+                *if bits 4-3 = 11 we have ROd, else: shift
+                bne     gre_skip2   *if 4-3 != 11, go to shift
                 bsr     op_rod * it's ROd
                 bra     read_gre_x
 
@@ -491,6 +504,9 @@ groups:         jmp     jump_notfound   * group 0 not needed
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
+
+
 
 
 
