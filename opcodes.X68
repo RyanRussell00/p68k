@@ -10,8 +10,9 @@
 *   d7 - 6 bit binary string that holds the SOURCE op mode/register
 *   d6 - 6 bit binary string that holds the DESTINATION op mode/register
 *   d5 - set to 1 if destination ea exists, set to 0 otherwise
-*   d4 - valid EA source list
-*   d3 - valid EA destination list
+*   d4 - instruction size: 0 for byte, 1 for word, 2 for long
+*   d3 - valid EA source list
+*   d2 - valid EA destination list
 *   a0 - address of the opcode we are looking at
 * return:
 *   a0 - address offset from original opcode in case of extra words
@@ -21,6 +22,7 @@ handle_ea       move.w  sr, -(sp)
                 movem.l rl_handle_ea, -(sp)
 * ---- subroutine code:
                 
+                bsr     valid_both
                 bsr     printer
                 bsr     print_nl
                 
@@ -32,11 +34,11 @@ handle_ea_x     movem.l (sp)+, rl_handle_ea
 * //// validate EA mode against opcode
 * parameters:
 *   d7 - EA mode (bits 3-5) and register (bits 0-2)
-*   d4 - byte for EA mode list, lists all allowed EA modes
+*   d3 - byte for EA mode list, lists all allowed EA modes
 * return:
-*   d2 - byte is $FF if the EA mode is valid, $00 if invalid
+*   d1 - byte is $FF if the EA mode is valid, $00 if invalid
 *
-rl_v_ea         reg     a0-a6/d0-d1/d3-d7
+rl_v_ea         reg     a0-a6/d0/d2-d7
 valid_ea        move.w  sr, -(sp)
                 movem.l rl_v_ea, -(sp)
 * ---- subroutine code:
@@ -63,39 +65,39 @@ valid_ea        move.w  sr, -(sp)
                 cmpi.b  #%100, d7 * addreg indirect with predec
                 beq     mode_ani_prd
                 
-                sf      d2 * set result to invalid
+                sf      d1 * set result to invalid
                 bra valid_ea_x * valid mode not found
                 
-mode_dn         lsl.b   #1, d4
-                scs     d2
+mode_dn         lsl.b   #1, d3
+                scs     d1
                 bra     valid_ea_x
                 
-mode_an         lsl.b   #2, d4
-                scs     d2
+mode_an         lsl.b   #2, d3
+                scs     d1
                 bra     valid_ea_x
                 
-mode_ani        lsl.b   #3, d4
-                scs     d2
+mode_ani        lsl.b   #3, d3
+                scs     d1
                 bra     valid_ea_x
                 
-mode_ani_psi    lsl.b   #4, d4
-                scs     d2
+mode_ani_psi    lsl.b   #4, d3
+                scs     d1
                 bra     valid_ea_x
                 
-mode_ani_prd    lsl.b   #5, d4
-                scs     d2
+mode_ani_prd    lsl.b   #5, d3
+                scs     d1
                 bra     valid_ea_x
                 
-mode_abs_w      lsl.b   #6, d4
-                scs     d2
+mode_abs_w      lsl.b   #6, d3
+                scs     d1
                 bra     valid_ea_x
                 
-mode_abs_l      lsl.b   #7, d4
-                scs     d2
+mode_abs_l      lsl.b   #7, d3
+                scs     d1
                 bra     valid_ea_x
                 
-mode_imm        lsl.b   #8, d4
-                scs     d2
+mode_imm        lsl.b   #8, d3
+                scs     d1
                 bra     valid_ea_x
                 
 * ---- exit        
@@ -107,26 +109,36 @@ valid_ea_x      movem.l (sp)+, rl_v_ea
 * parameters:
 *   d7 - source mode (bits 3-5) and register (bits 0-2)
 *   d6 - destination mode (bits 3-5) and register (bits 0-2)
-*   d4 - source mode list, byte
-*   d3 - destination mode list, byte
+*   d5 - set to 1 if destination ea exists, set to 0 otherwise
+*   d3 - source mode list, byte
+*   d2 - destination mode list, byte
 * return:
-*   d2 - byte is $FF if both valid, $00 if either are invalid
+*   d7 - original source mode or %111111 if invalid
+*   d6 - original dest mode or %111111 if invalid
 *
-rl_valid_both   reg     a0-a6/d0-d1/d3-d7
+rl_valid_both   reg     a0-a6/d0-d5
 valid_both      move.w  sr, -(sp)
                 movem.l rl_valid_both, -(sp)
 * ---- subroutine code:
                 
                 bsr     valid_ea * validate source
-                move.b  d2, d0 * save first result
+                cmpi.b  #$FF, d1
+                beq     source_good
+                move.b  #%111111, d7 * invalid EA, set mode/reg to all 1s
                 
-                move.b  d3, d5 * prepare destination mode/reg
-                move.b  d4, d5 * prepare destination mode list
+source_good     cmpi.b  #1, d5
+                bne     valid_both_x
                 
-                bsr     valid_ea * validate source
+                exg     d6, d7 * swap source and dest modes/regs
+                exg     d2, d3 * swap source and dest mode lists
                 
-                * AND the results of both validations
-                and.b    d0, d2 * store result in d7
+                bsr     valid_ea * validate dest
+                cmpi.b  #$FF, d1
+                beq     dest_good
+                move.b  #%111111, d7 * invalid EA, set mode/reg to all 1s
+                
+dest_good       exg     d6, d7 * swap back parameters
+                exg     d2, d3
                 
 * ---- exit
 valid_both_x    movem.l (sp)+, rl_valid_both
@@ -217,6 +229,9 @@ op_move         move.w  sr, -(sp)
                 * At this point: d7 contains source EA and d6 contains destination EA
                 * we set d5 = 1 since we have to print destination and source
                 move.l  #1, d5
+                
+                move.b  (ea_move_s), d3
+                move.b  (ea_move_d), d2
                 bsr     handle_ea
                 
                 addq    #$2, a0     * go to next opcode word
@@ -330,6 +345,7 @@ op_movea        move.w  sr, -(sp)
                 *we set d5 = 1 since we have to print destination and source
                 move.l  #1, d5
                 
+                move.b  (ea_movea_s), d3
                 bsr     handle_ea
                 
                 addq    #$2, a0
@@ -370,6 +386,9 @@ op_add          move.w  sr, -(sp)
                 move.w  (a0), d6
                 andi.l  #%0000000000111111, d6
                 
+                move.b  (ea_add_s), d3 * pre-emptively load validation params
+                move.b  (ea_add_d), d2
+                
                 *check direction
                 move.w  (a0), d1
                 andi.l  #%0000000100000000, d1 *mask to get direction
@@ -377,13 +396,10 @@ op_add          move.w  sr, -(sp)
                 bne     print_add   *if not 1, go to print add
                        
                 *if direction is 1, flip d7 and d6
-                clr     d4
-                move.l  d7, d4
-                move.l  d6, d7
-                move.l  d4, d6
+                exg     d7, d6
+                exg     d3, d2 * flip validation params too
                 
-print_add       
-                bsr     handle_ea
+print_add       bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -405,10 +421,7 @@ op_adda         move.w  sr, -(sp)
                 move.b  #14, d0
                 lea     msg_adda, a1
                 trap    #15
-                              
-                clr     d7  *parameters for printer
-                clr     d6
-                clr     d5
+                
                 move.l  #%1, d5 *set printing destination true
                 *get source and destination
                 *get data register at bits 9-11
@@ -422,7 +435,8 @@ op_adda         move.w  sr, -(sp)
                 *get EA bits 0-5
                 move.w  (a0), d7
                 andi.l  #%0000000000111111, d7
-
+                
+                move.b  (ea_add_s), d3
                 bsr     handle_ea
                 
                 addq    #$2, a0
@@ -493,6 +507,9 @@ op_sub          move.w  sr, -(sp)
                 move.w  (a0), d6
                 andi.l  #%0000000000111111, d6
                 
+                move.b  (ea_sub_s), d3 * pre-emptively load validation params
+                move.b  (ea_sub_d), d2
+                
                 *check direction
                 move.w  (a0), d1
                 andi.l  #%0000000100000000, d1 *mask to get direction
@@ -500,13 +517,10 @@ op_sub          move.w  sr, -(sp)
                 bne     print_sub   *if not 1, go to print add
                        
                 *if direction is 1, flip d7 and d6
-                clr     d4
-                move.l  d7, d4
-                move.l  d6, d7
-                move.l  d4, d6
+                exg     d7, d6
+                exg     d3, d2 * flip validation params
                 
-print_sub       
-                bsr     handle_ea
+print_sub       bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -546,6 +560,7 @@ op_lea          move.w  sr, -(sp)
                 add     #%1, d6 *add 1 to indicate An reg mode
                 rol.w   #3, d6  *rotate to get the reg bits as LSB
                 
+                move.b  (ea_lea_s), d3
                 bsr     handle_ea
                 
                 addq    #$2, a0
@@ -586,6 +601,9 @@ op_and          move.w  sr, -(sp)
                 move.w  (a0), d6
                 andi.l  #%0000000000111111, d6
                 
+                move.b  (ea_and_s), d3
+                move.b  (ea_and_d), d2
+                
                 *check direction
                 move.w  (a0), d1
                 andi.l  #%0000000100000000, d1 *mask to get direction
@@ -593,13 +611,10 @@ op_and          move.w  sr, -(sp)
                 bne     print_and   *if not 1, go to print and
                        
                 *if direction is 1, flip d7 and d6
-                clr     d4
-                move.l  d7, d4
-                move.l  d6, d7
-                move.l  d4, d6
+                exg     d7, d6
+                exg     d3, d2
                 
-print_and       
-                bsr     handle_ea
+print_and       bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -638,6 +653,9 @@ op_or           move.w  sr, -(sp)
                 move.w  (a0), d6
                 andi.l  #%0000000000111111, d6
                 
+                move.b  (ea_or_s), d3
+                move.b  (ea_or_d), d2
+                
                 *check direction
                 move.w  (a0), d1
                 andi.l  #%0000000100000000, d1 *mask to get direction
@@ -645,13 +663,10 @@ op_or           move.w  sr, -(sp)
                 bne     print_or   *if not 1, go to print add
                        
                 *if direction is 1, flip d7 and d6
-                clr     d4
-                move.l  d7, d4
-                move.l  d6, d7
-                move.l  d4, d6
+                exg     d7, d6
+                exg     d3, d2
                 
-print_or       
-                bsr     handle_ea
+print_or        bsr     handle_ea
                 
                 addq    #$2, a0
 * ---- exit                
@@ -679,6 +694,7 @@ op_not          move.w  sr, -(sp)
                 move.w  (a0), d7
                 andi    #%0000000000111111, d7 *mask to get bits 0-5
                 
+                move.b  (ea_not_s), d3
                 bsr     handle_ea
                 
                 addq    #$2, a0
@@ -779,6 +795,7 @@ op_jsr          move.w  sr, -(sp)
                 move.w  (a0), d7
                 andi.w  #%0000000000111111, d7 *get EA mode and reg
                 
+                move.b  (ea_jsr_s), d3
                 bsr     handle_ea
                 
                 addq    #$2, a0
@@ -896,6 +913,7 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 

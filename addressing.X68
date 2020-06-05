@@ -9,6 +9,7 @@
 *   d7 - 6 bit binary string that holds the SOURCE op mode/register
 *   d6 - 6 bit binary string that holds the DESTINATION op mode/register
 *   d5 - set to 1 if destination ea exists, set to 0 otherwise
+*   d4 - instruction size: 0 for byte, 1 for word, 2 for long
 *   a0 - address of the opcode we are looking at
 * return:
 *   a0 - address offset from original opcode in case of extra words
@@ -1343,7 +1344,7 @@ printer_tests_x   		movem.l (sp)+, rl_printer_tests * restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
 
-invalid     dc.b    'BAD EA', 0
+invalid     dc.b    '[invalid EA]', 0
 
 *direct data registers print
 direct_data_0 dc.b    'd0', 0
@@ -1402,6 +1403,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 

@@ -7,7 +7,10 @@ test_org    equ     $5000
             org     test_org
 
 * testing codes
-test_start  nop 
+test_start  nop
+
+            move.l  d0, d1
+            or      d4, $88881111
             
             not     (a0)
 top
@@ -158,6 +161,8 @@ last
             nop
 
 test_end    nop
+
+
 
 
 *~Font name~Courier New~
