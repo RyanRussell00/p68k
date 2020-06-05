@@ -462,8 +462,28 @@ shift_rotate_printer    move.w  sr, -(sp) * save CCR to stack
                 
                 bsr     print_space
                 
-                clr     d5 *set destination print to false
+
+*if bits 3 and 4 hold 1 and 0, respectively, we are shifting immediate
+                clr     d7 *print param
+                clr     d5 *print param
                 clr     d1 *temp
+                move.w  (a0), d1
+                *if bits 7-6 = 11 then we are only printing 1 EA
+                andi.b  #%11000000, d1
+                cmpi.b  #%11000000, d1
+                beq     one_bit_shift
+                
+                *if not printing shift by 1, go to printer subroutine to handle printing
+                bra     reg_shift
+                
+one_bit_shift   *print only 1 EA since shifting by 1 bit
+                move.w  (a0), d7
+                andi.b  #%00111111, d7 *only get last 6 bits
+                bsr     printer
+                bra     shift_rotate_printer_x
+
+reg_shift       *shifting/rotating by register; not immediate
+                clr     d1 *reset temp
                 move.w  (a0), d1
                 
                 *if bit 5 = 0 print immediate, if 1 print register
@@ -515,7 +535,9 @@ sr_dest     *print destination
                 bsr     printer
                 
 * ---- exit        
-shift_rotate_printer_x movem.l (sp)+, rl_shift_rotate_printer * restore old registers
+shift_rotate_printer_x 
+                bsr     print_nl
+                movem.l (sp)+, rl_shift_rotate_printer * restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
     
