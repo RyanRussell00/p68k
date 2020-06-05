@@ -11,13 +11,20 @@ test_start  nop
 
              not    (a0)
 top
+
+
+             ROXL   (a5) *invalid
+             ROXR   (a2) *invalid
+             lsl    (a1)
+             lsr    #2, d2
+             
              addq   #4, d0
              not    (a0)
              not    (a0)
              not    (a0)
              not    (a0)
-             BGT    top
-             BGT    last
+*             BGT    top
+*             BGT    last
              
              jsr     mid
              jsr     (a4)
@@ -205,6 +212,8 @@ last
 
 
 test_end    nop
+
+
 
 *~Font name~Courier New~
 *~Font size~10~

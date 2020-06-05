@@ -447,6 +447,77 @@ bcc_print
 bcc_printer_x movem.l (sp)+, rl_bcc_printer * restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
+
+*-----------------------------------------------------------
+* //// Shift/Rotate Printer
+* parameters:
+*   a0 - opcode address
+* return:
+*   prints the destination of the BCC
+*
+rl_shift_rotate_printer reg a1-a6/d0-d7 * every reg except parameters/return
+shift_rotate_printer    move.w  sr, -(sp) * save CCR to stack
+               movem.l rl_shift_rotate_printer , -(sp) * save current regs to stack
+* ---- subroutine code:
+                
+                bsr     print_space
+                
+                clr     d5 *set destination print to false
+                clr     d1 *temp
+                move.w  (a0), d1
+                
+                *if bit 5 = 0 print immediate, if 1 print register
+                cmpi.b  #%00100000, d1
+                beq     sr_reg *print data reg, else print immediate
+                
+                lea     pound_sign, a1  *load the pound sign to print
+                move.b  #14, d0         *set trap
+                trap    #15             *print to screen
+                
+                *prepare printing immediate parameters
+                move.b  #15, d0
+                move.b  #10, d2 *base 10
+                
+                *get source that is immediate
+                andi.w  #%0000111000000000, d1
+                rol.w   #7, d1 *rotate left to get bits at end
+                cmpi.b  #%00000000, d1  *if 0 we are printing 8                
+                bne     sr_imm *if not 0 go to print 1-7
+                
+                *print 8 as decimal
+                move.l  #8, d1
+                trap    #15
+                
+                *go to print destination
+                bra     sr_dest
+                
+sr_reg  *get source that is register
+                clr     d7
+                move.w  (a0), d7
+                andi.w  #%0000111000000000, d7
+                *rotateleft  to get reg at end
+                rol.w   #7, d7
+                bsr     printer
+                bra     sr_dest
+                
+sr_imm  *print immediate data between 1 and 7
+                *printing parameters were handled earlier, just execute print
+                trap    #15
+
+sr_dest     *print destination
+            *prepare print parameters
+                clr d7
+                
+                bsr     print_comma
+                
+                move.w  (a0), d7
+                andi.w  #%0000000000000111, d7 *get destination data reg
+                bsr     printer
+                
+* ---- exit        
+shift_rotate_printer_x movem.l (sp)+, rl_shift_rotate_printer * restore old registers
+                rtr * restore CCR, exit subroutine
+*-----------------------------------------------------------
     
 *-----------------------------------------------------------
 * //// Read data register addressing mode
@@ -514,7 +585,7 @@ print_d6        cmp     #%000110, d1    *compare to see if d6
                 bra     data_reg_x  *exit the subroutine
 
 print_d7        cmp     #%000111, d1    *compare to see if d7
-                bne     data_reg_x  *if not, try next
+                bne     invalid_ea  *if not, try next
                 lea     direct_data_7, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
@@ -590,7 +661,7 @@ print_a6        cmp     #%001110, d1    *compare to see if d6
                 bra     addr_reg_x  *exit the subroutine
 
 print_a7        cmp     #%001111, d1    *compare to see if d7
-                bne     addr_reg_x  *if not, try next
+                bne     invalid_ea  *if not, try next
                 lea     direct_addr_7, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
@@ -612,61 +683,61 @@ ind_addr_reg    move.w  sr, -(sp)    * save CCR to stack
 * ---- subroutine code:
                 
                 move.l  d7, d1          *Save the contents of d0 in a temp registry
-                and.b   #%111000, d7    *mask opmode to expected opmode
-                cmp     #%010000, d7    *check mask result to make its expected
+                and.b   #%00111000, d7    *mask opmode to expected opmode
+                cmpi.b  #%00010000, d7    *check mask result to make its expected
                 bne     ind_addr_reg_x      *if not expected, exit subroutine
        
-print_ind_a0    cmp     #%010000, d1    *compare to see if d0
+print_ind_a0    cmpi.b  #%010000, d1    *compare to see if d0
                 bne     print_ind_a1        *if not d0 try d1
                 lea     indirect_addr_0, a1   *load the message for d0
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     ind_addr_reg_x  *exit the subroutine
  
-print_ind_a1    cmp     #%010001, d1    *compare to see if d1
+print_ind_a1    cmpi.b  #%010001, d1    *compare to see if d1
                 bne     print_ind_a2        *if not, try next
                 lea     indirect_addr_1, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     ind_addr_reg_x  *exit the subroutine
                 
-print_ind_a2    cmp     #%010010, d1    *compare to see if d2
+print_ind_a2    cmpi.b  #%010010, d1    *compare to see if d2
                 bne     print_ind_a3        *if not, try next
                 lea     indirect_addr_2, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     ind_addr_reg_x  *exit the subroutine
                 
-print_ind_a3    cmp     #%010011, d1    *compare to see if d3
+print_ind_a3    cmpi.b  #%010011, d1    *compare to see if d3
                 bne     print_ind_a4        *if not, try next
                 lea     indirect_addr_3, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     ind_addr_reg_x  *exit the subroutine
 
-print_ind_a4    cmp     #%010100, d1    *compare to see if d4
+print_ind_a4    cmpi.b  #%010100, d1    *compare to see if d4
                 bne     print_ind_a5        *if not, try next
                 lea     indirect_addr_4, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     ind_addr_reg_x  *exit the subroutine
                 
-print_ind_a5    cmp     #%010101, d1    *compare to see if d5
+print_ind_a5    cmpi.b  #%010101, d1    *compare to see if d5
                 bne     print_ind_a6        *if not, try next
                 lea     indirect_addr_5, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
                 bra     ind_addr_reg_x  *exit the subroutine
                 
-print_ind_a6    cmp     #%010110, d1    *compare to see if d6
+print_ind_a6    cmpi.b  #%010110, d1    *compare to see if d6
                 bne     print_ind_a7        *if not, try next
                 lea     indirect_addr_6, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen     
                 bra     ind_addr_reg_x  *exit the subroutine
 
-print_ind_a7    cmp     #%010111, d1    *compare to see if d7
-                bne     ind_addr_reg_x  *if not, try next
+print_ind_a7    cmpi.b  #%010111, d1    *compare to see if d7
+                bne     invalid_ea  *if not, try next
                 lea     indirect_addr_7, a1   *load the message
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
@@ -920,6 +991,8 @@ abs_x   		movem.l (sp)+, rl_abs *restore old registers
                 rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
 
+
+
 *-----------------------------------------------------------
 * //// reset printer
 * parameters:
@@ -930,19 +1003,19 @@ abs_x   		movem.l (sp)+, rl_abs *restore old registers
 * return:
 *   clears all parameters
 *
-rl_reset_printer reg     a1-a6/d0-d4 * every reg except parameters/return
-reset_printer    move.w  sr, -(sp) * save CCR to stack
-                 movem.l rl_reset_printer, -(sp) * save current regs to stack
-* ---- subroutine code:
-                
-                clr     d7
-                clr     d6
-                clr     d5
-                clr     (a0)
-                
-* ---- exit        
-reset_printer_x movem.l (sp)+, rl_reset_printer * restore old registers
-                rtr * restore CCR, exit subroutine
+*rl_reset_printer reg     a1-a6/d0-d4 * every reg except parameters/return
+*reset_printer    move.w  sr, -(sp) * save CCR to stack
+*                 movem.l rl_reset_printer, -(sp) * save current regs to stack
+** ---- subroutine code:
+*                
+*                clr     d7
+*                clr     d6
+*                clr     d5
+*                clr     (a0)
+*                
+** ---- exit        
+*reset_printer_x movem.l (sp)+, rl_reset_printer * restore old registers
+*                rtr * restore CCR, exit subroutine
 *-----------------------------------------------------------
 
 **-----------------------------------------------------------
@@ -1059,289 +1132,6 @@ print_slash_x   movem.l (sp)+, rl_print_slash
                 rtr
 *-----------------------------------------------------------
 
-*-----------------------------------------------------------
-* //// Tests for the EA printer
-*
-rl_printer_tests    	reg     a0-a6/d0-d7 * every reg except parameters/return
-printer_tests    move.w  sr, -(sp) * save CCR to stack
-                    movem.l rl_printer_tests, -(sp) * save current regs to stack
-* ---- subroutine code:
-                
-    *Tests for MOVEM
-    bsr     reset_printer
-    move    #%100000, d7        *EA = -(a0)
-    move.l  #0,d6              *direction = reg to mem
-    move.l  #$48A0E000, (a0)   *Registers = D0/D1/D2
-    bsr     movem_printer    
-
-    bsr     reset_printer
-    move    #%100000, d7        *EA = -(a0)
-    move.l  #0,d6              *direction = mem to reg
-    move.l  #$48A0FFFF, (a0)   *Registers = All
-    bsr     movem_printer               
-    
-*    *Tests for data register
-*    bsr     reset_printer
-*    move.b  #%000111, d7
-*    move.b  #%000110, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%000101, d7
-*    move.b  #%000100, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%000011, d7
-*    move.b  #%000010, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%000001, d7
-*    move.b  #%000000, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%000111, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%000010, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%000000, d7
-*    move.b  #0, d5
-*    bsr     printer
-*     
-*    *Tests for direct address register
-*    bsr     reset_printer
-*    move.b  #%001111, d7
-*    move.b  #%001110, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%001101, d7
-*    move.b  #%001100, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%001011, d7
-*    move.b  #%001010, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer 
-*    move.b  #%001001, d7
-*    move.b  #%001000, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%001111, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%001010, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%001000, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    *Tests for INDIRECT address register
-*    bsr     reset_printer
-*    move.b  #%010111, d7
-*    move.b  #%010110, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%010101, d7
-*    move.b  #%010100, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%010011, d7
-*    move.b  #%010010, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%010001, d7
-*    move.b  #%010000, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%010111, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%010010, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%010000, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    *Tests for INCREMENT address register
-*    bsr     reset_printer
-*    move.b  #%011111, d7
-*    move.b  #%011110, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%011101, d7
-*    move.b  #%011100, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%011011, d7
-*    move.b  #%011010, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%011001, d7
-*    move.b  #%011000, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%011111, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%011010, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%011000, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    *Tests for DECREMENT address register
-*    bsr     reset_printer
-*    move.b  #%100111, d7
-*    move.b  #%100110, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%100101, d7
-*    move.b  #%100100, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%100011, d7
-*    move.b  #%100010, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%100001, d7
-*    move.b  #%100000, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%100111, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%100010, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    move.b  #%100000, d7
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    *Test for Immediate
-*    
-*    *immediate source test
-*    bsr     reset_printer
-*    lea     $0000, a0
-*    move.b  #%111100, d7 *set source (immediate value) to print
-*    move.l  #$1E3CFFFF, (a0) *opcode and additional data
-*    move.l  #0, d5          *destination exists flag = false
-*    bsr     printer
-*   
-*    bsr     reset_printer
-*    lea     $0000, a0
-*    move.b  #%111100, d7
-*    move.w  #$ABCD, (a0) *opcode
-*    movea   a0, a1
-*    addq    #2, a1 *go to 1st additional word
-*    move.w  #$4202, (a1)
-*    addq    #2, a1 *go to 2nd additional word
-*    move.w  #$6969, (a1)
-*    move.b  #%111100, d6
-*    move.l  #1, d5              *destination exists flag = true
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    lea     $0000, a0
-*    move.b  #%111100, d7
-*    move.l  #%001111, d6
-*    move.b  #1, d5
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    lea     $0000, a0
-*    move.b  #%111100, d7
-*    move.l  #%01111111111111111111111111111111, (a0)
-*    move.b  #0, d5
-*    bsr     printer
-*    
-*    *Test for absolute
-*    bsr     reset_printer
-*    lea     $0000, a0
-*    move.b  #%111000, d7
-*    move.l  #$1E3C0AAA, (a0) *opcode and additional data
-*    bsr     printer
-*    
-*    bsr     reset_printer
-*    lea     $0000, a0
-*    move.b  #%111001, d7
-*    move.w  #$ABCD, (a0) *opcode
-*    movea   a0, a1
-*    addq    #2, a1 *go to 1st additional word
-*    move.w  #$4202, (a1)
-*    addq    #2, a1 *go to 2nd additional word
-*    move.w  #$6969, (a1)
-*    move.b  #%100111, d6
-*    move.l  #1, d5              *destination exists flag = true
-*    bsr     printer
-                
-* ---- exit        
-printer_tests_x   		movem.l (sp)+, rl_printer_tests * restore old registers
-                rtr * restore CCR, exit subroutine
-*-----------------------------------------------------------
-
 invalid     dc.b    'BAD EA', 0
 
 *direct data registers print
@@ -1401,6 +1191,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 
