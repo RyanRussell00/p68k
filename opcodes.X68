@@ -232,7 +232,7 @@ op_notfound     move.w  sr, -(sp)
                 
                 clr.b   d2
                 move.b  #21, d0 * change font color
-                move.l  #$000000FF, d1 * red
+                move.l  #$00D1CE00, d1 * dark turquoise
                 trap    #15
                 
                 move.b  #14, d0
@@ -252,7 +252,7 @@ op_notfound     move.w  sr, -(sp)
                 bsr     print_hex_w
                 bsr     print_nl
                 
-                addq    #$2, a0 * move to next opcode word
+                addq.w  #$2, a0 * move to next opcode word
                 
 * ---- exit        
 op_notfound_x   movem.l (sp)+, reglist_notf * bring back old registers
@@ -274,7 +274,7 @@ op_nop          move.w  sr, -(sp)
                 lea     msg_nop, a1
                 trap    #15
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_nop_x        movem.l (sp)+, reglist_nop
                 rtr
@@ -323,7 +323,7 @@ op_move         move.w  sr, -(sp)
                 move.b  (ea_move_d), d2
                 bsr     handle_ea
                 
-                addq    #$2, a0     * go to next opcode word
+                addq.w  #$2, a0     * go to next opcode word
 * ---- exit                
 op_move_x       movem.l (sp)+, reglist_move
                 rtr
@@ -355,7 +355,7 @@ op_moveq        move.w  sr, -(sp)
                 bsr     moveq_printer
                 bsr     print_nl
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_moveq_x      movem.l (sp)+, reglist_moveq
                 rtr
@@ -425,22 +425,27 @@ op_movea        move.w  sr, -(sp)
                 lea     msg_movea, a1
                 trap    #15
                 
+                * printing the size of MOVEA
+                move.w  (a0), d4
+                rol.w   #4, d4 * rotate size bits to the last 2 bits
+                bsr     print_mv_size
+                
                 *print addressing modes
                 
                 *get destination. EA Printer parameters expect Mode then Register
                 move.w  (a0), d1    *load instruction into data reg
-                clr     d2          *temp
+                clr.l   d2          *temp
                 move.l  #%001000, d6 *set destination mode to address register
                 move.w  d1, d2     
                 and.l   #%0000111000000000, d2  *clear everything but destination register
                 move.l  #9, d3
-                lsr     d3, d2      *shift right to get destination register at end
-                add     d2, d6      *combine destination mode and regiser
+                lsr.w   d3, d2      *shift right to get destination register at end
+                add.w   d2, d6      *combine destination mode and regiser
                 
                 *get source EA
-                clr     d7
+                clr.l   d7
                 move.w  d1, d7      *load instruction into source EA parameter
-                and     #%0000000000111111, d7  *get source ea
+                and.w   #%0000000000111111, d7  *get source ea
                 
                 *At this point: d7 contains source EA and d6 contains destination EA
                 *we set d5 = 1 since we have to print destination and source
@@ -450,7 +455,7 @@ op_movea        move.w  sr, -(sp)
                 move.b  (ea_movea_d), d2
                 bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_movea_x      movem.l (sp)+, reglist_movea
                 rtr
@@ -470,6 +475,11 @@ op_add          move.w  sr, -(sp)
                 move.b  #14, d0
                 lea     msg_add, a1
                 trap    #15
+                
+                * print size
+                move.w  (a0), d4
+                lsr.b   #6, d4 * shift size bits to last 2
+                bsr     print_size
                 
                 *if direction is 0, the Dn is destination
                 clr     d1  *temp
@@ -503,7 +513,7 @@ op_add          move.w  sr, -(sp)
                 
 print_add       bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_add_x        movem.l (sp)+, reglist_add
                 rtr
@@ -524,7 +534,19 @@ op_adda         move.w  sr, -(sp)
                 lea     msg_adda, a1
                 trap    #15
                 
-                move.l  #%1, d5 *set printing destination true
+                * size printing:
+                move.w  (a0), d1
+                btst.l  #8, d1 * test bit 8 for size
+                bne     adda_l
+                * bit 8 is %0 for .W, %1 for .L
+                moveq   #%01, d4 * ADDA.W
+                bsr     print_size
+                bra     adda_skip1
+                
+adda_l          moveq   #%10, d4 * ADDA.L
+                bsr     print_size
+                
+adda_skip1      move.l  #%1, d5 *set printing destination true
                 *get source and destination
                 *get data register at bits 9-11
                 move.w  (a0), d6
@@ -542,7 +564,7 @@ op_adda         move.w  sr, -(sp)
                 move.b  (ea_adda_d), d2
                 bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_adda_x       movem.l (sp)+, reglist_adda
                 rtr
@@ -563,6 +585,10 @@ op_addq         move.w  sr, -(sp)
                 lea     msg_addq, a1
                 trap    #15
                 
+                * print size
+                move.w  (a0), d4
+                lsr.b   #6, d4 * shift size bits to last 2
+                bsr     print_size
                 bsr     print_space
                 
                 clr     d7
@@ -572,7 +598,7 @@ op_addq         move.w  sr, -(sp)
                 bsr     addq_printer
                 bsr     print_nl
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_addq_x       movem.l (sp)+, reglist_addq
                 rtr
@@ -592,6 +618,11 @@ op_sub          move.w  sr, -(sp)
                 move.b  #14, d0
                 lea     msg_sub, a1
                 trap    #15
+                
+                * print size
+                move.w  (a0), d4
+                lsr.b   #6, d4 * shift size bits to last 2
+                bsr     print_size
                 
                 *if direction is 0, the Dn is destination
                 clr     d1  *temp
@@ -625,7 +656,7 @@ op_sub          move.w  sr, -(sp)
                 
 print_sub       bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_sub_x        movem.l (sp)+, reglist_sub
                 rtr
@@ -667,7 +698,7 @@ op_lea          move.w  sr, -(sp)
                 move.b  (ea_lea_d), d2
                 bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_lea_x        movem.l (sp)+, reglist_lea
                 rtr
@@ -687,6 +718,10 @@ op_and          move.w  sr, -(sp)
                 move.b  #14, d0
                 lea     msg_and, a1
                 trap    #15
+                
+                move.w  (a0), d4
+                lsr.b   #6, d4
+                bsr     print_size
                 
                 *if direction is 0, the Dn is destination
                 clr     d1  *temp
@@ -720,7 +755,7 @@ op_and          move.w  sr, -(sp)
                 
 print_and       bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_and_x        movem.l (sp)+, reglist_and
                 rtr
@@ -740,6 +775,10 @@ op_or           move.w  sr, -(sp)
                 move.b  #14, d0
                 lea     msg_or, a1
                 trap    #15
+                
+                move.w  (a0), d4
+                lsr.b   #6, d4
+                bsr     print_size
                 
                 clr     d1  *temp
                 clr     d7  *parameters for printer
@@ -772,7 +811,7 @@ op_or           move.w  sr, -(sp)
                 
 print_or        bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_or_x         movem.l (sp)+, reglist_or
                 rtr
@@ -793,6 +832,10 @@ op_not          move.w  sr, -(sp)
                 lea     msg_not, a1
                 trap    #15
                 
+                move.w  (a0), d4
+                lsr.b   #6, d4
+                bsr     print_size
+                
                 clr     d7
                 clr     d5  *set print destination = false
                 move.w  (a0), d7
@@ -801,7 +844,7 @@ op_not          move.w  sr, -(sp)
                 move.b  (ea_not_s), d3
                 bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_not_x        movem.l (sp)+, reglist_not
                 rtr
@@ -863,10 +906,29 @@ print_lsd_right
                 trap    #15
                 bra     shift_ea                
                 
-shift_ea
-                bsr     shift_rotate_printer
+shift_ea        
+                * before printing EA, print size
+                move.w  (a0), d4
+                lsr.b   #6, d4 * shift size bits to the last 2
+                move.w  d4, d5
+                
+                andi.b  #%11, d5 * keep only last 2 bits
+                cmpi.b  #%11, d5 * check if size = %11, EA shift, .W only
+                bne     xsd_datareg
+                
+                * xSd is shifting an EA, which is .W only
+                moveq   #%01, d4 * force print_size to print .W
+                bsr     print_size
+                bra     xsd_go_print
+                
+                * otherwise, it's shifting a data register
+xsd_datareg     bsr     print_size * called with sizes B, W, L
+                
+                
+                * now EA can be printed
+xsd_go_print    bsr     shift_rotate_printer
 * ---- exit                
-op_xsd_x        addq    #$2, a0
+op_xsd_x        addq.w  #$2, a0
                 movem.l (sp)+, reglist_xsd
                 rtr
 
@@ -898,15 +960,32 @@ op_rod          move.w  sr, -(sp)
                 bra     ror_ea
                 
 rod_left
+                * before printing EA, print size
                 lea     msg_rol, a1
                 trap    #15
                 bra     ror_ea
                 
-ror_ea               
-                bsr     shift_rotate_printer
+ror_ea          
+                move.w  (a0), d4
+                lsr.b   #6, d4 * shift size bits to the last 2
+                move.w  d4, d5
+                
+                andi.b  #%11, d5 * keep only last 2 bits
+                cmpi.b  #%11, d5 * check if size = %11, EA rotation, .W only
+                bne     rod_datareg
+                
+                * ROd is rotating an EA, which is .W only
+                moveq   #%01, d4 * force print_size to print .W
+                bsr     print_size
+                bra     rod_go_print
+                
+                * otherwise, it's rotating a data register
+rod_datareg     bsr     print_size * called with sizes B, W, L
+
+rod_go_print    bsr     shift_rotate_printer
                 
 * ---- exit                
-op_rod_x        addq    #$2, a0
+op_rod_x        addq.w  #$2, a0
                 movem.l (sp)+, reglist_rod
                 rtr
 
@@ -931,7 +1010,7 @@ op_bcc          move.w  sr, -(sp)
                 bsr     bcc_printer
                 bsr     print_nl
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_bcc_x        movem.l (sp)+, reglist_bcc
                 rtr
@@ -959,7 +1038,7 @@ op_jsr          move.w  sr, -(sp)
                 move.b  (ea_jsr_s), d3
                 bsr     handle_ea
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit                
 op_jsr_x        movem.l (sp)+, reglist_jsr
                 rtr
@@ -980,7 +1059,7 @@ op_rts          move.w  sr, -(sp)
                 lea     msg_rts, a1
                 trap    #15
                 
-                addq    #$2, a0
+                addq.w  #$2, a0
 * ---- exit
 op_rts_x        movem.l (sp)+, reglist_rts
                 rtr
@@ -1003,7 +1082,7 @@ op_rts_x        movem.l (sp)+, reglist_rts
 *                lea     msg_bra, a1
 *                trap    #15
 *                
-*                addq    #$2, a0
+*                addq.w  #$2, a0
 ** ---- exit
 *op_bra_x        movem.l (sp)+, reglist_bra
 *                rtr
@@ -1082,6 +1161,8 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
+
 
 
 

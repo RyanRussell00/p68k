@@ -147,6 +147,13 @@ gr4_skip3:      * NOT recognition
                 andi.w  #%111100000000, d6 * clear all bits but 11-8
                 cmpi.w  #%011000000000, d6 * check if bits 11-8 = 0110
                 bne     gr4_skip4
+                
+                move.w  d7, d6
+                andi.w  #%11000000, d6 * clear all bits but 7-6
+                cmpi.w  #%11000000, d6 * check if bits 7-6 = 11
+                * if bits 7-6 are 11, it's not NOT
+                beq     gr4_skip4
+                
                 bsr     op_not
                 bra     read_gr4_x
 
@@ -185,9 +192,14 @@ read_gr5        move.w  sr, -(sp)
                 move.w  (a0), d7
                 
                 * ADDQ recognition
-                andi.w  #%100000000, d7 * clear all bits but 8
-                cmpi.w  #%0, d7 * check if bit 8 = 0
-                bne     gr5_skip1
+                btst.l  #8, d7 * test bit 8
+                bne     gr5_skip1 * skip to DATA if it's %1
+                
+                andi.b  #%11000000, d7 * clear all bits but 7-6
+                cmpi.b  #%11000000, d7 * check if bits 7-6 = %11
+                * if bits 7-6 = %11, it's not ADDQ
+                beq     gr5_skip1
+                
                 bsr     op_addq
                 bra     read_gr5_x
                 
@@ -504,6 +516,9 @@ groups:         jmp     jump_notfound   * group 0 not needed
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
+
+
 
 
 

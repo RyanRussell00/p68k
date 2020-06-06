@@ -189,31 +189,33 @@ test_start
             adda.w  #9999, a2
             
             * group e
-             ROXL   (a5) *invalid
-             ROXR   (a2) *invalid
-             ROXL   #2, d5 *invalid
-             ROXR   #7, d7 *invalid
-             lsl    (a1)
-             asl    -(a0)
-             asl    (a7)+
-             asr    $1245
-             asl    $12349876
-             lsr    #2, d2
-             lsl    #1, d0
-             asl    #8, d7
-             lsr    #4, d5
-             
-             ror    (a3)
-             ror    (a0)+
-             ror    -(a7)
-             rol    $3333
-             rol    $12346789
-             rol    #1, d0
-             rol    #5, d5
-             rol    #8, d7
+            roxl   (a5) *invalid
+            roxr   (a2) *invalid
+            roxl   #2, d5 *invalid
+            roxr   #7, d7 *invalid
+            lsl    (a1)
+            asl    -(a0)
+            asl    (a7)+
+            asr    $1245
+            asl    $12349876
+            lsr.b  #2, d2
+            lsl.w  #1, d0
+            asl.l  #8, d7
+            lsr.b  #4, d5
+            
+            ror    (a3)
+            ror    (a0)+
+            ror    -(a7)
+            rol    $3333
+            rol    $12346789
+            rol.b  #1, d0
+            rol.w  #5, d5
+            rol.l  #8, d7
             nop
 
 test_end    nop
+
+
 
 
 
