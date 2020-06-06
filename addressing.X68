@@ -19,64 +19,74 @@ printer         move.w  sr, -(sp) * save CCR to stack
 * ---- subroutine code:
                 
 start_printer   
-                clr     d2          *clear everything in the temp register
+                clr     d3          *clear everything in the temp register
                 
                 *print space
                 bsr     print_space
                 
                 *since the original value is untouched, whatever subroutine we call gets the original param
-                move.l  d7, d2      *move the parameter into temp register
+                move.l  d7, d3      *move the parameter into temp register
                 
-                and.l   #%111000, d2 *mask the temp register to get addressing mode
+                and.l   #%111000, d3 *mask the temp register to get addressing mode
                 
                 *start comparisons
-is_data         cmp.l   #%000000, d2 *data register
+is_data         cmp.l   #%000000, d3 *data register
                 bne     is_addr      *if not equal, try next
                 bsr     data_reg
                 bra     printer_x
                 
-is_addr         cmp.l   #%001000, d2 *address register
+is_addr         cmp.l   #%001000, d3 *address register
                 bne     is_ind_addr  *if not equal, try next
                 bsr     addr_reg
                 bra     printer_x
                 
-is_ind_addr     cmp.l   #%010000, d2 *indirect address register
+is_ind_addr     cmp.l   #%010000, d3 *indirect address register
                 bne     is_incrmnt   *if not equal, try next
                 bsr     ind_addr_reg
                 bra     printer_x
                 
-is_incrmnt      cmp.l   #%011000, d2 *post increment address register
+is_incrmnt      cmp.l   #%011000, d3 *post increment address register
                 bne     is_decrmnt    *if not equal, try next
                 bsr     inc_addr_reg
                 bra     printer_x
                 
-is_decrmnt      cmp.l   #%100000, d2 *pre decrement address register
+is_decrmnt      cmp.l   #%100000, d3 *pre decrement address register
                 bne     is_immdte    *if not equal, try next
                 bsr     dec_addr_reg
                 bra     printer_x
                  
 is_immdte       *Use entire 6 bits for absolute and immediate since we need last 3 bits
-                move.l  d7, d2      *reset the temp variable with original value
-                cmp.b   #%111100, d2 *immediate
+                move.l  d7, d3      *reset the temp variable with original value
+                cmp.b   #%111100, d3 *immediate
                 bne     is_abs_w     *if not equal, try next
                 bsr     immdte       
                 bra     printer_x
 
-is_abs_w        cmp.b   #%111000, d2 *absolute word
+is_abs_w        cmp.b   #%111000, d3 *absolute word
                 bne     is_abs_l     *if not equal, try next
                 bsr     abs
                 bra     printer_x
 
-is_abs_l        cmp.b   #%111001, d2 *absolute long
+is_abs_l        cmp.b   #%111001, d3 *absolute long
                 bne     invalid_ea
                 bsr     abs
                 bra     printer_x
                 
-invalid_ea     
+invalid_ea      
+                clr.b   d2
+                move.b  #21, d0 * change font color
+                move.l  #$000000FF, d1 * red
+                trap    #15
+                
                 lea     invalid, a1 *load message for invalid
                 move.b  #14, d0     
                 trap    #15         *print to screen
-                bra     printer_x    
+                
+                move.b  #21, d0
+                move.l  #$00FFFFFF, d1 * reset to white
+                trap    #15
+                
+                bra     printer_x
 
 printer_loop    *Check if we have second EA to print
                 clr     d5          *clear d5 to prevent infinite loop
@@ -461,10 +471,7 @@ shift_rotate_printer    move.w  sr, -(sp) * save CCR to stack
                movem.l rl_shift_rotate_printer , -(sp) * save current regs to stack
 * ---- subroutine code:
                 
-                bsr     print_space
-                
-
-*if bits 3 and 4 hold 1 and 0, respectively, we are shifting immediate
+                *if bits 3 and 4 hold 1 and 0, respectively, we are shifting immediate
                 clr     d7 *print param
                 clr     d5 *print param
                 clr     d1 *temp
@@ -491,6 +498,7 @@ reg_shift       *shifting/rotating by register; not immediate
                 cmpi.b  #%00100000, d1
                 beq     sr_reg *print data reg, else print immediate
                 
+                bsr     print_space
                 lea     pound_sign, a1  *load the pound sign to print
                 move.b  #14, d0         *set trap
                 trap    #15             *print to screen
@@ -1054,7 +1062,7 @@ print_slash_x   movem.l (sp)+, rl_print_slash
                 rtr
 *-----------------------------------------------------------
 
-invalid     dc.b    'BAD EA', 0
+invalid     dc.b    '[invalid EA]', 0
 
 *direct data registers print
 direct_data_0 dc.b    'd0', 0
@@ -1113,6 +1121,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 

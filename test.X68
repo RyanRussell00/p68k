@@ -19,13 +19,13 @@ test_start
             move.w  $12345678, $1
             move.w  $12345678, $12345678
             
+            * Tests for unsupported EA modes
+            move.w  ($AA, a1), ($BB, a2)
+            
             * Tests for immediate data
             move.b  #$12, d0
             move.w  #$1234, d0
             move.l  #$12345678, d0
-            
-            * Tests for unsupported EA modes
-            move.w  ($AA, a1), ($BB, a2)
             
             * group 1
             move.b      d1, (a1)
@@ -214,6 +214,7 @@ test_start
             nop
 
 test_end    nop
+
 
 
 

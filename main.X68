@@ -64,14 +64,23 @@ wait_user       move.w  sr, -(sp)
                 movem.l rl_wait_user, -(sp)
 * ---- subroutine code:
                 
+                clr.b   d2
+                move.b  #21, d0 * change font color
+                move.l  #$0000A5FF, d1 * orange
+                trap    #15
+                
                 move.b  #14, d0 * print null-term string without CR, LF
                 lea     msg_wait, a1
                 trap    #15
                 
-                move.b  #5, d0 * read character from keyboard
+                move.b  #21, d0
+                move.l  #$00FFFFFF, d1 * reset to white
                 trap    #15
                 
+                move.b  #5, d0 * read character from keyboard
+                trap    #15
                 bsr     print_nl
+                
 * ---- exit
 wait_user_x     movem.l (sp)+, rl_wait_user
                 rtr
@@ -200,6 +209,7 @@ print_logo      move.w  sr, -(sp)
                 movem.l rl_print_logo, -(sp)
 * ---- subroutine code:
                 
+                clr.b   d2
                 move.b  #21, d0 * change font color
                 move.l  #$000000FF, d1 * red
                 trap    #15
@@ -298,6 +308,7 @@ indent          dc.w    HT,HT,0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 *~Font name~Courier New~
 *~Font size~10~

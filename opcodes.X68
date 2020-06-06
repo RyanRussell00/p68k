@@ -236,8 +236,17 @@ op_notfound     move.w  sr, -(sp)
                 movem.l reglist_notf, -(sp) * save current regs to stack
 * ---- handle the opcode:
                 
+                clr.b   d2
+                move.b  #21, d0 * change font color
+                move.l  #$000000FF, d1 * red
+                trap    #15
+                
                 move.b  #13, d0
                 lea     msg_data, a1
+                trap    #15
+                
+                move.b  #21, d0
+                move.l  #$00FFFFFF, d1 * reset to white
                 trap    #15
                 
                 addq    #$2, a0 * move to next opcode word
@@ -1057,6 +1066,7 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 
