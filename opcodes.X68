@@ -149,40 +149,34 @@ valid_both_x    movem.l (sp)+, rl_valid_both
 *-----------------------------------------------------------
 * //// print instruction size
 * parameters:
-*   d1 - %00 for B, %01 for W, %10 for L
+*   d4 - %00 for B, %01 for W, %10 for L
 * return:
-*   d1 - if parameter was %11, sets d1.b to $FF for failure
+*   none
 *
-rl_print_size   reg     a0-a6/d0/d2-d7
+rl_print_size   reg     a0-a6/d0-d7
 print_size      move.w  sr, -(sp)
                 movem.l rl_print_size, -(sp)
 * ---- subroutine code:
                 
                 move.b  #14, d0 * for printing without newline
-                andi.b  #%11, d1
+                andi.b  #%11, d4 * keep only last 2 bits
                 
-                cmpi.b  #%10, d1
+                cmpi.b  #%10, d4
                 bne     size_not_long
                 
                 lea     msg_size_l, a1 * print .L
                 trap    #15
                 bra     print_size_x
                 
-size_not_long   cmpi.b  #%01, d1
+size_not_long   cmpi.b  #%01, d4
                 bne     size_not_word
                 
                 lea     msg_size_w, a1 * print .W
                 trap    #15
                 bra     print_size_x
                 
-size_not_word   cmpi.b  #%00, d1
-                bne     size_invalid
-                
-                lea     msg_size_b, a1 * print .B
+size_not_word   lea     msg_size_b, a1 * print .B
                 trap    #15
-                bra     print_size_x
-                
-size_invalid    move.b  #$FF, d1 * size is %11, invalid
                 
 * ---- exit
 print_size_x    movem.l (sp)+, rl_print_size
@@ -191,27 +185,27 @@ print_size_x    movem.l (sp)+, rl_print_size
 *-----------------------------------------------------------
 * //// print instruction size for MOVE
 * parameters:
-*   d1 - %01 for B, %11 for W, %10 for L
+*   d4 - %01 for B, %11 for W, %10 for L
 * return:
-*   d1 - if parameter was %11, sets d1.b to $FF for failure
+*   none
 *
-rl_print_m_s    reg     a0-a6/d0/d2-d7
+rl_print_m_s    reg     a0-a6/d0-d7
 print_mv_size   move.w  sr, -(sp)
                 movem.l rl_print_m_s, -(sp)
 * ---- subroutine code:
                 
-                andi.b  #%11, d1 * leave only last 2 bits
+                andi.b  #%11, d4 * leave only last 2 bits
                 
-                cmpi.b  #%10, d1
+                cmpi.b  #%10, d4
                 beq     go_print_size * size is MOVE.L
                 
-                cmpi.b  #%11, d1
+                cmpi.b  #%11, d4
                 bne     mv_size_b
                 
-                move.b  #%01, d1 * size is MOVE.W
+                move.b  #%01, d4 * size is MOVE.W
                 bra     go_print_size
                 
-mv_size_b       move.b  #%00, d1 * size is MOVE.B
+mv_size_b       move.b  #%00, d4 * size is MOVE.B
                 
                 * note: MOVE will never send a bad size
                 * because opcode detection would not allow it
@@ -241,13 +235,22 @@ op_notfound     move.w  sr, -(sp)
                 move.l  #$000000FF, d1 * red
                 trap    #15
                 
-                move.b  #13, d0
+                move.b  #14, d0
                 lea     msg_data, a1
                 trap    #15
                 
                 move.b  #21, d0
                 move.l  #$00FFFFFF, d1 * reset to white
                 trap    #15
+                
+                bsr     print_space
+                move.b  #14, d0
+                lea     dollar_sign, a1
+                trap    #15
+                
+                move.w  (a0), d1 * prepare data word for printing
+                bsr     print_hex_w
+                bsr     print_nl
                 
                 addq    #$2, a0 * move to next opcode word
                 
@@ -292,25 +295,25 @@ op_move         move.w  sr, -(sp)
                 lea     msg_move, a1
                 trap    #15
                 
-                * print addressing modes
+                * printing the size of MOVE
+                move.w  (a0), d4
+                rol.w   #4, d4 * rotate size bits to the last 2 bits
+                bsr     print_mv_size
                 
                 * get destination. EA Printer parameters expect Mode then Register
                 move.w  (a0), d1    * load instruction into data reg
-                clr.l   d6
-                clr.l   d2
                 move.w  d1, d6      * prepare destination parameter
                 move.w  d1, d2      * copy to temp register
-                and.l   #%0000000111000000, d6  * clear everything but destination mode
-                lsr.l   #3, d6      * shift right to move the destination mode 3 from the end
-                and.l   #%0000111000000000, d2  * get destination register
-                lsr.l   #1, d2
-                lsr.l   #8, d2      * shift right to get destination register at end
-                add.l   d2, d6      * combine destination mode and regiser
+                and.w   #%0000000111000000, d6  * clear everything but destination mode
+                lsr.w   #3, d6      * shift right to move the destination mode 3 from the end
+                and.w   #%0000111000000000, d2  * get destination register
+                lsr.w   #1, d2
+                lsr.w   #8, d2      * shift right to get destination register at end
+                add.w   d2, d6      * combine destination mode and register
                 
                 * get source EA
-                clr.l   d7
                 move.w  d1, d7      * load instruction into source EA parameter
-                and.l   #%0000000000111111, d7  * get source EA
+                and.w   #%0000000000111111, d7  * get source EA
                 
                 * At this point: d7 contains source EA and d6 contains destination EA
                 * we set d5 = 1 since we have to print destination and source
@@ -373,18 +376,30 @@ op_movem        move.w  sr, -(sp)
                 lea     msg_movem, a1
                 trap    #15
                 
-                clr     d7      *ea printer parameter for ea
-                clr     d1      *temp register
+                * size printing:
+                move.w  (a0), d1
+                btst.l  #6, d1 * test bit 6 for size
+                bne     movem_l
+                * bit 6 is %0 for .W, %1 for .L
+                moveq   #%01, d4 * MOVEM.W
+                bsr     print_size
+                bra     movem_skip1
+                
+movem_l         moveq   #%10, d4 * MOVEM.L
+                bsr     print_size
+                
+                * ea printing:
+movem_skip1     clr.l   d7      *ea printer parameter for ea
+                clr.l   d1      *temp register
                 move.w  (a0), d1
                 *mask to get effective addressing mode
                 move.l  d1, d7  *set parameter
-                and     #%0000000000111111, d7  *mask to get ea of movem
+                andi.l  #%0000000000111111, d7  *mask to get ea of movem
                 
                 *get direction
-                clr     d6      *direction parameter
-                move.l  d1, d6
-                and     #%0000010000000000, d6  *mask to get direction
-                rol     #6, d6  *rotate left 6 times to get direction at the end     
+                move.l  d1, d6 * move into direction parameter
+                andi.l  #%0000010000000000, d6  *mask to get direction
+                rol.w   #6, d6  *rotate left 6 times to get direction at the end     
 
                 bsr     movem_printer
                 bsr     print_nl
@@ -999,6 +1014,7 @@ op_rts_x        movem.l (sp)+, reglist_rts
 msg_size_b      dc.w    '.B',0
 msg_size_w      dc.w    '.W',0
 msg_size_l      dc.w    '.L',0
+msg_size_bad    dc.w    '.[invalid size]',0
 
 * instruction messages
 msg_data        dc.w    'DATA',0

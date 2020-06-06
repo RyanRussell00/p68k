@@ -8,6 +8,7 @@
 * parameters:
 *   d7 - 6 bit binary string that holds the SOURCE op mode/register
 *   d6 - 6 bit binary string that holds the DESTINATION op mode/register
+*   d4 - instruction size: 0 for byte, 1 for word, 2 for long
 *   d5 - set to 1 if destination ea exists, set to 0 otherwise
 *   a0 - address of the opcode we are looking at
 * return:
@@ -1121,6 +1122,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 
