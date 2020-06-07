@@ -8,6 +8,8 @@ test_org    equ     $5000
 
 * testing codes
 test_start
+            move.l  #$12345678, d0
+            
             * Tests for abs.w and abs.l
             move.w  $1, d0
             move.w  $ABCD0123, d0
@@ -214,6 +216,7 @@ test_start
             nop
 
 test_end    nop
+
 
 
 

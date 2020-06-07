@@ -1,6 +1,6 @@
 *-----------------------------------------------------------
 * Title      : Addressing Mode Detect
-* Descr iption: Detects the addressing mode and prints it to screen
+* Description: Detects the addressing mode and prints it to screen
 *-----------------------------------------------------------
                 
 *-----------------------------------------------------------
@@ -8,13 +8,13 @@
 * parameters:
 *   d7 - 6 bit binary string that holds the SOURCE op mode/register
 *   d6 - 6 bit binary string that holds the DESTINATION op mode/register
-*   d4 - instruction size: 0 for byte, 1 for word, 2 for long
 *   d5 - set to 1 if destination ea exists, set to 0 otherwise
+*   d4 - instruction size: 0 for byte, 1 for word, 2 for long
 *   a0 - address of the opcode we are looking at
 * return:
 *   prints the EA to screen as: [space] SOURCE, [space] DESTINATION
 
-rl_printer      reg     a1-a6/d0-d4 * every reg except parameters/return
+rl_printer      reg     a1-a6/d0-d7 * every reg except parameters/return
 printer         move.w  sr, -(sp) * save CCR to stack
                 movem.l rl_printer, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -932,14 +932,16 @@ dec_addr_reg_x  movem.l (sp)+, rl_dec_addr_reg *restore old registers
 *-----------------------------------------------------------
 
 *-----------------------------------------------------------
-* //// Prints immediate data as decimal
+* //// Prints immediate data as hex
 * parameters:
 *   d7 - op mode and op register
+*   d4 - instruction size: 0 for byte, 1 for word, 2 for long
 *   a0 - address of additional data to print
 * return:
-*   prints to screen the decimal value of the hex value
+*   prints to screen the immediate data hex value
+*   a0 - last word address of immediate data
 
-rl_immdte       reg     a1-a6/d0-d6      * every reg except parameters/return
+rl_immdte       reg     a1-a6/d0-d7      * every reg except parameters/return
 immdte          move.w  sr, -(sp)        * save CCR to stack
                 movem.l rl_immdte, -(sp) * save current regs to stack
 * ---- subroutine code:
@@ -963,6 +965,14 @@ immdte          move.w  sr, -(sp)        * save CCR to stack
                 addq.l  #$2, a0
                 move.w  (a0), d1
                 bsr     print_hex_w     *print value as hex word
+                
+                * check if the instruction is long, meaning long imm data
+                btst.l  #1, d4 * test bit 1: if %1, it's long
+                beq     immdte_x * bit 1 is %0, not long, exit
+                
+                addq.l  #$2, a0 * go to next word containing imm data
+                move.w  (a0), d1
+                bsr     print_hex_w * print data again
                 
 * ---- exit        
 immdte_x   		movem.l (sp)+, rl_immdte *restore old registers
@@ -1155,7 +1165,8 @@ slash          dc.b  '/', 0
 
 
 
+
 *~Font name~Courier New~
-*~Font size~12~
+*~Font size~10~
 *~Tab type~1~
 *~Tab size~4~

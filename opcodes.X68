@@ -187,9 +187,9 @@ print_size_x    movem.l (sp)+, rl_print_size
 * parameters:
 *   d4 - %01 for B, %11 for W, %10 for L
 * return:
-*   none
+*   d4 - translated size: %00 for B, %01 for W, %10 for L
 *
-rl_print_m_s    reg     a0-a6/d0-d7
+rl_print_m_s    reg     a0-a6/d0-d3/d5-d7
 print_mv_size   move.w  sr, -(sp)
                 movem.l rl_print_m_s, -(sp)
 * ---- subroutine code:
@@ -1161,6 +1161,7 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 
