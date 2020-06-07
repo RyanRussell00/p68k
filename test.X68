@@ -8,7 +8,15 @@ test_org    equ     $5000
 
 * testing codes
 test_start
-            move.l  #$12345678, d0
+            * Tests for Bcc
+            bra     test_label
+            bgt     test_label
+            bra     *+8
+            nop
+test_label  ble     test_label
+            nop
+            beq     test_label
+            bne     test_label * BNE is unsupported, should print DATA
             
             * Tests for abs.w and abs.l
             move.w  $1, d0
@@ -216,6 +224,12 @@ test_start
             nop
 
 test_end    nop
+
+
+
+
+
+
 
 
 

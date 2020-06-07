@@ -216,6 +216,53 @@ go_print_size   bsr     print_size
 print_mv_size_x movem.l (sp)+, rl_print_m_s
                 rtr
 
+*-----------------------------------------------------------
+* //// print Bcc operator: BGT, BLE, BEQ, or BRA
+* parameters:
+*   d4 - entire Bcc instruction word
+* return:
+*   d3 - byte is $00 if success, $FF for failure
+*
+rl_pr_bcc_op    reg     a0-a6/d0-d2/d4-d7
+print_bcc_op    move.w  sr, -(sp)
+                movem.l rl_pr_bcc_op, -(sp)
+* ---- subroutine code:
+                
+                sf      d3 * set result to valid
+                move.b  #14, d0 * setup printing without newline
+                
+                rol.w   #8, d4 * move condition to last 4 bits
+                andi.b  #%1111, d4 * keep only last 4 bits
+                
+                cmpi.b  #%0000, d4 * BRA
+                bne     try_bgt
+                lea     msg_bra, a1
+                bra     bcc_trap
+                
+try_bgt         cmpi.b  #%1110, d4 * BGT
+                bne     try_ble
+                lea     msg_bgt, a1
+                bra     bcc_trap
+                
+try_ble         cmpi.b  #%1111, d4 * BLE
+                bne     try_beq
+                lea     msg_ble, a1
+                bra     bcc_trap
+                
+try_beq         cmpi.b  #%0111, d4 * BEQ
+                bne     bcc_invalid
+                lea     msg_beq, a1
+                bra     bcc_trap
+
+bcc_invalid     st      d3 * set result to invalid
+                bra     print_bcc_op_x
+
+bcc_trap        trap    #15
+                
+* ---- exit
+print_bcc_op_x  movem.l (sp)+, rl_pr_bcc_op
+                rtr
+
 * ==== opcode subroutines ====
 
 *-----------------------------------------------------------
@@ -1001,13 +1048,18 @@ op_bcc          move.w  sr, -(sp)
                 movem.l reglist_bcc, -(sp)
 * ---- handle the opcode:
                 
-                move.b  #14, d0
-                lea     msg_bcc, a1
-                trap    #15
+                * print Bcc operator
+                move.w  (a0), d4
+                bsr     print_bcc_op * returns valid = %00 in d3.b
                 
-                * ToDo: Op printing
+                tst.b   d3 * check if Bcc condition was valid
+                beq     bcc_valid
                 
-                bsr     bcc_printer
+                * invalid condition, print DATA
+                bsr     op_notfound 
+                bra     op_bcc_x
+                
+bcc_valid       bsr     bcc_printer
                 bsr     print_nl
                 
                 addq.w  #$2, a0
@@ -1064,29 +1116,6 @@ op_rts          move.w  sr, -(sp)
 op_rts_x        movem.l (sp)+, reglist_rts
                 rtr
 
-*-----------------------------------------------------------
-* //// opcode BRA
-* parameters:
-*   a0 - address of opcode's first word
-* return:
-*   a0 - address of next opcode word
-*
-*reglist_bra     reg     a1-a6/d0-d7
-*op_bra          move.w  sr, -(sp)
-*                movem.l reglist_bra, -(sp)
-** ---- handle the opcode:
-*                
-*                *ToDo: BRA should be incorporated into the BCC subroutine
-*
-*                move.b  #13, d0
-*                lea     msg_bra, a1
-*                trap    #15
-*                
-*                addq.w  #$2, a0
-** ---- exit
-*op_bra_x        movem.l (sp)+, reglist_bra
-*                rtr
-
 * ==== constants and variables ====
 
 * size messages
@@ -1116,10 +1145,12 @@ msg_lsr         dc.w    'LSR',0
 msg_lsl         dc.w    'LSL',0
 msg_rol         dc.w    'ROL',0
 msg_ror         dc.w    'ROR',0
-msg_bcc         dc.w    'Bcc',0
+msg_bgt         dc.w    'BGT',0
+msg_ble         dc.w    'BLE',0
+msg_beq         dc.w    'BEQ',0
+msg_bra         dc.w    'BRA',0
 msg_jsr         dc.w    'JSR',0
 msg_rts         dc.w    'RTS',0
-msg_bra         dc.w    'BRA',0
 
 * EA validation list style, byte bits 7->0:
 *   bit 7: Dn

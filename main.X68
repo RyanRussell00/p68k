@@ -126,7 +126,7 @@ print_space_x   movem.l (sp)+, rl_print_space
                 rtr
 
 *-----------------------------------------------------------
-* //// print long (32 bits) as hex digit
+* //// print long (32 bits) as hex digits
 * parameters:
 *   d1 - contains word to print as hex
 * return:
@@ -148,7 +148,7 @@ print_hex_l_x   movem.l (sp)+, rl_print_hex_l
 *-----------------------------------------------------------   
 
 *-----------------------------------------------------------
-* //// print word (16 bits) as hex digit
+* //// print word (16 bits) as hex digits
 * parameters:
 *   d1 - contains word to print as hex
 * return:
@@ -170,6 +170,27 @@ print_hex_w     move.w  sr, -(sp)
                 
 * ---- exit
 print_hex_w_x   movem.l (sp)+, rl_print_hex_w
+                rtr
+
+*-----------------------------------------------------------
+* //// print byte (8 bits) as hex digits
+* parameters:
+*   d1 - contains byte to print as hex
+* return:
+*   none
+*
+rl_print_hex_b  reg     a0-a6/d0-d7
+print_hex_b     move.w  sr, -(sp)
+                movem.l rl_print_hex_b, -(sp)
+* ---- subroutine code:
+                
+                rol.w   #$4, d1 * rotate first 4 bits to last 4 bits
+                bsr     print_hex_n
+                rol.w   #$4, d1
+                bsr     print_hex_n
+                
+* ---- exit
+print_hex_b_x   movem.l (sp)+, rl_print_hex_b
                 rtr
 
 *-----------------------------------------------------------
