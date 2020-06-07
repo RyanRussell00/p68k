@@ -14,20 +14,16 @@ start:
                 
                 bsr     print_logo
                 bsr     print_nl
+                bsr     bound_hint * for testing only, REMOVE FOR SUBMISSION
+                bsr     user_input
                 
-* Take user input for start and end address
-                jsr     get_user_input
-                
-* Loading address
-                move.l  d0, a0
-                move.l  d1, a1
-                
+* Run main loop
                 * counter for lines printed out
-                move.l  #num_first_lines, d2
+                clr.l   d2
 
 * while current address <= end address                
-read_loop       cmpa.l  a1, a0
-                bgt     read_loop_x
+read_loop       cmpa.l  a6, a0
+                bhi     read_loop_x
                 
                 cmpi.l  #screen_limit, d2 * if printed too many lines
                 bge     limit_reached
@@ -48,7 +44,7 @@ limit_reached   bsr     wait_user * wait for user to press any key
                 
 read_loop_x * loop exit
 
-                simhalt * code is done
+program_end     simhalt * code is done
         
 * ==== utility subroutines ====
 
@@ -64,18 +60,11 @@ wait_user       move.w  sr, -(sp)
                 movem.l rl_wait_user, -(sp)
 * ---- subroutine code:
                 
-                clr.b   d2
-                move.b  #21, d0 * change font color
-                move.l  #$0000A5FF, d1 * orange
-                trap    #15
-                
+                bsr     font_orange
                 move.b  #14, d0 * print null-term string without CR, LF
                 lea     msg_wait, a1
                 trap    #15
-                
-                move.b  #21, d0
-                move.l  #$00FFFFFF, d1 * reset to white
-                trap    #15
+                bsr     font_white
                 
                 move.b  #5, d0 * read character from keyboard
                 trap    #15
@@ -219,6 +208,90 @@ print_hex_n_x   movem.l (sp)+, rl_print_hex_n
                 rtr
 
 *-----------------------------------------------------------
+* //// set font color to white
+* parameters:
+*   none
+* return:
+*   none
+*
+rl_f_white      reg     a0-a6/d0-d7
+font_white      move.w  sr, -(sp)
+                movem.l rl_f_white, -(sp)
+* ---- subroutine code:
+                
+                clr.b   d2 * avoid font styling
+                move.b  #21, d0 * change font color
+                move.l  #$00FFFFFF, d1 * white
+                trap    #15
+                
+* ---- exit
+font_white_x    movem.l (sp)+, rl_f_white
+                rtr
+
+*-----------------------------------------------------------
+* //// set font color to red
+* parameters:
+*   none
+* return:
+*   none
+*
+rl_f_red        reg     a0-a6/d0-d7
+font_red        move.w  sr, -(sp)
+                movem.l rl_f_red, -(sp)
+* ---- subroutine code:
+                
+                clr.b   d2 * avoid font styling
+                move.b  #21, d0 * change font color
+                move.l  #$000000FF, d1 * red
+                trap    #15
+                
+* ---- exit
+font_red_x      movem.l (sp)+, rl_f_red
+                rtr
+
+*-----------------------------------------------------------
+* //// set font color to orange
+* parameters:
+*   none
+* return:
+*   none
+*
+rl_f_orange     reg     a0-a6/d0-d7
+font_orange     move.w  sr, -(sp)
+                movem.l rl_f_orange, -(sp)
+* ---- subroutine code:
+                
+                clr.b   d2 * avoid font styling
+                move.b  #21, d0 * change font color
+                move.l  #$0000A5FF, d1 * orange
+                trap    #15
+                
+* ---- exit
+font_orange_x   movem.l (sp)+, rl_f_orange
+                rtr
+
+*-----------------------------------------------------------
+* //// set font color to blue
+* parameters:
+*   none
+* return:
+*   none
+*
+rl_f_blue       reg     a0-a6/d0-d7
+font_blue       move.w  sr, -(sp)
+                movem.l rl_f_blue, -(sp)
+* ---- subroutine code:
+                
+                clr.b   d2 * avoid font styling
+                move.b  #21, d0 * change font color
+                move.l  #$00D1CE00, d1 * actually dark turquoise
+                trap    #15
+                
+* ---- exit
+font_blue_x     movem.l (sp)+, rl_f_blue
+                rtr
+
+*-----------------------------------------------------------
 * //// print Team 68++ logo
 * parameters:
 *   none
@@ -231,9 +304,7 @@ print_logo      move.w  sr, -(sp)
 * ---- subroutine code:
                 
                 clr.b   d2
-                move.b  #21, d0 * change font color
-                move.l  #$000000FF, d1 * red
-                trap    #15
+                bsr     font_red * red
                 move.b  #13, d0
                 lea     logo_1, a1
                 trap    #15
@@ -273,9 +344,7 @@ print_logo      move.w  sr, -(sp)
                 lea     logo_6, a1
                 trap    #15
                 
-                move.b  #21, d0
-                move.l  #$00FFFFFF, d1 * reset to white
-                trap    #15
+                bsr     font_white * back to white
                 
 * ---- exit
 print_logo_x    movem.l (sp)+, rl_print_logo
@@ -288,24 +357,9 @@ print_logo_x    movem.l (sp)+, rl_print_logo
 
 * ==== constants and variables =====
 
-num_first_lines equ     0 * num of lines printed before the main loop
 screen_limit    equ     31 * lines that can fit on the screen
 
 msg_wait        dc.w    '>>> Press [Enter] to continue... ',0
-
-input_pt1       dc.w    'Please enter an even ',0
-input_pt2       dc.w    ' address between (',0
-input_pt3       dc.w    ') and (',0
-input_pt4       dc.w    '): ',0
-
-input_inc_pt1   dc.w    'Input is incorrect.',0
-input_inc_pt2   dc.w    'Please enter an even value',0
-input_inc_pt3   dc.w    'within the range (',0
-input_inc_pt4   dc.w    ') and (',0
-input_inc_pt5   dc.w    '): ',0
-
-input_s         dc.w    'start',0
-input_e         dc.w    'end',0
 
 logo_1          dc.w    '  _______                       __   ___',0
 logo_2          dc.w    ' |__   __|                     / /  / _ \  _     _',0
@@ -352,6 +406,7 @@ str_buf         dc.l    0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 

@@ -74,18 +74,11 @@ is_abs_l        cmp.b   #%111001, d3 *absolute long
                 bra     printer_x
                 
 invalid_ea      
-                clr.b   d2
-                move.b  #21, d0 * change font color
-                move.l  #$000000FF, d1 * red
-                trap    #15
-                
+                bsr     font_red
                 lea     invalid, a1 *load message for invalid
                 move.b  #14, d0     
                 trap    #15         *print to screen
-                
-                move.b  #21, d0
-                move.l  #$00FFFFFF, d1 * reset to white
-                trap    #15
+                bsr     font_white
                 
                 bra     printer_x
 
@@ -1132,6 +1125,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 
