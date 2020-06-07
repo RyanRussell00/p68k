@@ -323,12 +323,36 @@ space           dc.w    ' ',0
 newline         dc.w    CR,LF,0
 indent          dc.w    HT,HT,0
 
+* 80 bytes of string buffer space
+* prevents other memory from being overwritten
+str_buf         dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+                dc.l    0
+
 * ==== tests ====
                 include "test.X68"
                 * don't move this any higher than end start
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 
