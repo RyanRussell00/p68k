@@ -132,16 +132,21 @@ revw_skip       ror.w   #8, d2 * swap An and Dn order in reglist
                 move.b  #'/', d1
                 clr.l   d6 * loop counter
                 
+                clr.b   d4 * flag for printing slashes
+                
+* loop to print out register list
 regl_loop       cmpi.b  #16, d6
                 bge     regl_loop_end
                 
                 btst.l  d6, d2 * test bit number [d6] in d2
-                beq     regl_skip1 * if bit is 0, don't print reg
+                beq     regl_skip2 * if bit is 0, don't print reg
                 
-                bsr     regl_reg * print an or dn
+                tas     d4 * if N = 0, don't print slash
+                bpl     regl_skip1
                 trap    #15
+regl_skip1      bsr     regl_reg * print an or dn
                 
-regl_skip1      addq.b  #1, d6
+regl_skip2      addq.b  #1, d6
                 bra     regl_loop
 regl_loop_end  
                 
@@ -987,6 +992,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 

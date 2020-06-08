@@ -11,7 +11,8 @@ start:
                 lea     org_stack, sp * initialize stack
 
 * ==== program code ====
-                clr     d7
+                clr.l   d4
+                tas     d4
                 bsr     print_logo
                 bsr     print_nl
                 bsr     bound_hint * for testing only, REMOVE FOR SUBMISSION
@@ -407,6 +408,7 @@ str_buf         dc.l    0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 
