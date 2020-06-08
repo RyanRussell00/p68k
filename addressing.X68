@@ -130,18 +130,19 @@ reg_to_mem
                 bra     print_registers_list *print reg list first
                 
 print_registers_list
+                clr     d6 *reset the predec flag
                 move.l  d7, d1              *save into temp
-                andi    #%0000000000100000, d1 *mask to check if precedrement
+                andi.w  #%0000000000100000, d1 *mask to check if precedrement
                 cmpi.b  #%00100000, d1       *check mask
                 bne     setup_reg_print     *if not predecrement, go to printing
                 *if predecrement, set d4 to 1 to tell printer it is predecrement
-                clr     d4
-                move    #1, d4
+                move    #1, d6
                 
 setup_reg_print
                 move.l  #1, d1      *clear the flag to prevent extra slashes from printing
                 clr     d5          *clear counter
                 addq    #$2, a0     *go to word after opcode
+                clr     d2
                 move.w  (a0), d2    *save the register list mask into data register  
                 
                 *rotate left 15 times and print if last rotated was 1
@@ -168,14 +169,14 @@ no_slash
                 bra     print_reg   *repeat loop
            
 print_mem       
-                clr     d4
+                clr     d3  *clear flag to print memory to prevent loop
                 clr     d5  *set d5 to 0 so printer doesnt print source
-                bsr     print_comma
+                bsr     print_comma *print comma, space is printed by printer SR
                 bsr     printer
                 bra     movem_printer_x     
 * ---- exit
 movem_printer_x 
-                cmpi    #1,d4       *check if flag is set for printing memory
+                cmpi    #1, d3       *check if flag is set for printing memory
                 beq     print_mem
                 movem.l (sp)+, rl_movem_printer
                 rtr
@@ -185,7 +186,7 @@ movem_printer_x
 * //// Prints data register for MOVEM ONLY!
 * parameters:
 *   d5 - counter
-*   d4 - is predecrement? 1 = true ; 0 = false
+*   d6 - is predecrement? 1 = true ; 0 = false
 * return:
 *   prints to screen
 
@@ -196,7 +197,7 @@ reg_list_printer move.w  sr, -(sp)
 
                 move.l  d5, d1      *copy counter to d1 cause Im too lazy to change the code below
 
-                cmpi.b  #1, d4      *if predecrement do 15 - counter
+                cmpi.b  #1, d6      *if predecrement do 15 - counter
                 
                 bne     print_a0_list
                 *for predecrement only:
@@ -1125,6 +1126,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 

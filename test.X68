@@ -7,17 +7,12 @@ test_org    equ     $5000
             org     test_org
 
 * testing codes
-test_start
-            * Tests for Bcc
-            bra     test_label
-            bgt     test_label
-            bra     *+8
-            nop
-test_label  ble     test_label
-            nop
-            beq     test_label
-            bne     test_label * BNE is unsupported, should print DATA
+test_start            
+
+            movem.l a4/d5, $9999
             
+            movem.l $22223333, d3/a7/d1-d4
+
             * Tests for abs.w and abs.l
             move.w  $1, d0
             move.w  $ABCD0123, d0
@@ -29,13 +24,13 @@ test_label  ble     test_label
             move.w  $12345678, $1
             move.w  $12345678, $12345678
             
-            * Tests for unsupported EA modes
-            move.w  ($AA, a1), ($BB, a2)
-            
             * Tests for immediate data
             move.b  #$12, d0
             move.w  #$1234, d0
             move.l  #$12345678, d0
+            
+            * Tests for unsupported EA modes
+            move.w  ($AA, a1), ($BB, a2)
             
             * group 1
             move.b      d1, (a1)
@@ -94,9 +89,10 @@ test_label  ble     test_label
             movem.w a0-a3/d1-d4, -(a6)
             movem.w a0-a5, -(a6)
             movem.l (a6)+, a0-a7/d0-d7
+            movem.w (a0)+, d3/a2/d4/a0/a7/d1
+            movem.w (a7)+, a2/d2/a4/d0/a7/d1
             movem.w a0-a7/d0-d7, -(a0)
             movem.w d7, -(a3)
-            movem.w a0-a7/d0-d7, -(a6)
             lea     (a0), a1
             lea     $1111, a4
             lea     $99990444, a0
@@ -199,40 +195,31 @@ test_label  ble     test_label
             adda.w  #9999, a2
             
             * group e
-            roxl   (a5) *invalid
-            roxr   (a2) *invalid
-            roxl   #2, d5 *invalid
-            roxr   #7, d7 *invalid
-            lsl    (a1)
-            asl    -(a0)
-            asl    (a7)+
-            asr    $1245
-            asl    $12349876
-            lsr.b  #2, d2
-            lsl.w  #1, d0
-            asl.l  #8, d7
-            lsr.b  #4, d5
-            
-            ror    (a3)
-            ror    (a0)+
-            ror    -(a7)
-            rol    $3333
-            rol    $12346789
-            rol.b  #1, d0
-            rol.w  #5, d5
-            rol.l  #8, d7
+             ROXL   (a5) *invalid
+             ROXR   (a2) *invalid
+             ROXL   #2, d5 *invalid
+             ROXR   #7, d7 *invalid
+             lsl    (a1)
+             asl    -(a0)
+             asl    (a7)+
+             asr    $1245
+             asl    $12349876
+             lsr    #2, d2
+             lsl    #1, d0
+             asl    #8, d7
+             lsr    #4, d5
+             
+             ror    (a3)
+             ror    (a0)+
+             ror    -(a7)
+             rol    $3333
+             rol    $12346789
+             rol    #1, d0
+             rol    #5, d5
+             rol    #8, d7
             nop
 
 test_end    nop
-
-
-
-
-
-
-
-
-
 
 
 
