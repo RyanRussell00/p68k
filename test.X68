@@ -10,7 +10,7 @@ test_org    equ     $5000
 test_start            
 
             movem.l a4/d5, $9999
-            
+            movem.l a2-a5/d0/d4-d6, -(sp)
             movem.l $22223333, d3/a7/d1-d4
 
             * Tests for abs.w and abs.l
@@ -220,6 +220,7 @@ test_start
             nop
 
 test_end    nop
+
 
 
 

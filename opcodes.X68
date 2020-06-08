@@ -24,6 +24,11 @@ handle_ea       move.w  sr, -(sp)
                 
                 bsr     valid_both
                 bsr     printer
+                
+                * secret behavior: if bit 2 of d4 is 1,
+                * newline is not printed after the EA mode
+                btst.l  #2, d4
+                bne     handle_ea_x
                 bsr     print_nl
                 
 * ---- exit                
@@ -418,33 +423,43 @@ op_movem        move.w  sr, -(sp)
                 
                 * size printing:
                 move.w  (a0), d1
-                btst.l  #6, d1 * test bit 6 for size
+                btst.l  #6, d1 * bit 6 is %0 for .W, %1 for .L
                 bne     movem_l
-                * bit 6 is %0 for .W, %1 for .L
                 moveq   #%01, d4 * MOVEM.W
                 bsr     print_size
-                bra     movem_skip1
+                bra     movem_dir
                 
 movem_l         moveq   #%10, d4 * MOVEM.L
                 bsr     print_size
                 
-                * ea printing:
-movem_skip1     clr.l   d7      *ea printer parameter for ea
-                clr.l   d1      *temp register
-                move.w  (a0), d1
-                *mask to get effective addressing mode
-                move.l  d1, d7  *set parameter
-                andi.l  #%0000000000111111, d7  *mask to get ea of movem
+movem_dir       clr.b   d5 * do not print destination EA
+                move.w  (a0), d7 * get opword
+                andi    #%111111, d7 * keep bits 0-5
                 
-                *get direction
-                move.l  d1, d6 * move into direction parameter
-                andi.l  #%0000010000000000, d6  *mask to get direction
-                rol.w   #6, d6  *rotate left 6 times to get direction at the end     
-
-                bsr     movem_printer
+                btst.l  #10, d1 * test bit 10 for direction
+                bne     movem_mtr * if %1, it's memory-to-register
+                
+movem_rtm       bsr     print_space
+                move.b  (ea_movem_d), d3
+                bsr     print_reglist
+                bsr     print_comma
+                addq.l  #2, a0 * step forward past reglist
+                bsr     handle_ea
+                bra     movem_done
+                
+movem_mtr       move.b  (ea_movem_s), d3
+                addq.l  #2, a0 * step forward past reglist
+                bset.l  #2, d4 * don't print newline after EA
+                bsr     handle_ea
+                bsr     print_comma
+                bsr     print_space
+                subq.l  #2, a0 * step back to MOVEM opword
+                bsr     print_reglist
+                addq.l  #2, a0 * step forward again
                 bsr     print_nl
                 
-                addq.l  #$4, a0 *add 4 to skip after data word
+movem_done      
+                addq.l  #$2, a0
 * ---- exit                
 op_movem_x      movem.l (sp)+, reglist_movem
                 rtr
@@ -876,10 +891,9 @@ op_not          move.w  sr, -(sp)
                 lsr.b   #6, d4
                 bsr     print_size
                 
-                clr     d7
-                clr     d5  *set print destination = false
+                clr.l   d5  *set print destination = false
                 move.w  (a0), d7
-                andi    #%0000000000111111, d7 *mask to get bits 0-5
+                andi    #%111111, d7 *mask to get bits 0-5
                 
                 move.b  (ea_not_s), d3
                 bsr     handle_ea
@@ -1183,8 +1197,6 @@ ea_lsd_d        dc.b    %10111110
 ea_asd_d        dc.b    %10111110
 ea_rod_d        dc.b    %10111110
 
-* ==== included files ====
-                include "addressing.X68"
 
 
 

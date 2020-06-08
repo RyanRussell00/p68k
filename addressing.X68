@@ -97,234 +97,95 @@ printer_x
 *-----------------------------------------------------------
 
 *-----------------------------------------------------------
-* //// Prints EA for MOVEM ONLY!
+* //// print MOVEM register list
 * parameters:
-*   d7 - 6 bit binary string that holds the effective address
-*   d6 - 1 bit binary that indicates direction ; Reg to Mem = 0 ; Mem to Reg = 1 ;
-*   a0 - address of the opcode we are looking at
+*   a0 - address of MOVEM instruction
 * return:
-*   prints to screen
-
-rl_movem_printer  reg     a0-a6/d0-d7
-movem_printer   move.w  sr, -(sp)
-                movem.l rl_movem_printer, -(sp)
+*   none
+*
+rl_pr_reglist   reg     a0-a6/d0-d7
+print_reglist   move.w  sr, -(sp)
+                movem.l rl_pr_reglist, -(sp)
 * ---- subroutine code:
                 
-                *Check direction bit to see which way we are going
-                cmpi.b  #0, d6      *if direction is reg to mem
-                beq     reg_to_mem  *if reg_to_mem go to branch
-mem_to_reg
-                *print register to save in first, followed by list of registers
-                *set d5 to 0 so printer doesnt print source
-                clr      d5
-                bsr      printer
-                bsr      print_comma
-                bsr      print_space
-                bra      print_registers_list
-
-reg_to_mem
-                *print register list first followed by register to save in
-                clr     d3
-                move.l  #1, d3          *set a flag to print the memory after printing register list
-                bsr     print_space
-                bra     print_registers_list *print reg list first
+                move.w  (a0), d7 * movem opword
+                addq.l  #2, a0 * next word in memory
+                move.w  (a0), d2 * movem reglist
                 
-print_registers_list
-                clr     d6 *reset the predec flag
-                move.l  d7, d1              *save into temp
-                andi.w  #%0000000000100000, d1 *mask to check if precedrement
-                cmpi.b  #%00100000, d1       *check mask
-                bne     setup_reg_print     *if not predecrement, go to printing
-                *if predecrement, set d4 to 1 to tell printer it is predecrement
-                move    #1, d6
+                andi.b  #%111000, d7 * keep EA mode bits
+                cmpi.b  #%100000, d7 * check if mode is -(An)
+                bne     revw_skip * if not -(An), don't reverse reglist
                 
-setup_reg_print
-                move.l  #1, d1      *clear the flag to prevent extra slashes from printing
-                clr.l   d5          *clear counter
-                addq.l  #$2, a0     *go to word after opcode
-                clr.l   d2
-                move.w  (a0), d2    *save the register list mask into data register  
+* loop to reverse reglist
+                clr.b   d6 * loop counter
+revw_loop       cmpi.b  #16, d6
+                bge     revw_loop_end
+                roxr.w  #1, d2
+                roxl.w  #1, d3
                 
-                *rotate left 15 times and print if last rotated was 1
-print_reg       
-                cmpi    #16, d5     *check counter
-                bge     movem_printer_x *exit loop if counter >= 16
-                rol.w   #1,  d2     *rotate temp to the left by 1
-                bcs     reg_found   *print if last carried bit was 1
-                addq.b  #1, d5      *increment counter
-                bra     print_reg   *repeat loop
+                addq.b  #1, d6
+                bra     revw_loop
+revw_loop_end   move.w  d3, d2
                 
-reg_found       *print register
-                cmpi.b  #1, d1      *check if first value. 1 = first value
-                beq     no_slash    *if first value, print NO slash
-                bsr     print_slash *if not first value, print slash BEFORE register
-                bsr     reg_list_printer
-                addq.b  #1, d5      *increment counter
-                bra     print_reg   *repeat loop
+revw_skip       ror.w   #8, d2 * swap An and Dn order in reglist
+                move.b  #6, d0 * print char in d1.b
+                move.b  #'/', d1
+                clr.l   d6 * loop counter
                 
-no_slash
-                clr     d1
-                bsr     reg_list_printer
-                addq.b  #1, d5      *increment counter
-                bra     print_reg   *repeat loop
-           
-print_mem       
-                clr     d3  *clear flag to print memory to prevent loop
-                clr     d5  *set d5 to 0 so printer doesnt print source
-                bsr     print_comma *print comma, space is printed by printer SR
-                bsr     printer
-                bra     movem_printer_x     
+regl_loop       cmpi.b  #16, d6
+                bge     regl_loop_end
+                
+                btst.l  d6, d2 * test bit number [d6] in d2
+                beq     regl_skip1 * if bit is 0, don't print reg
+                
+                bsr     regl_reg * print an or dn
+                trap    #15
+                
+regl_skip1      addq.b  #1, d6
+                bra     regl_loop
+regl_loop_end  
+                
 * ---- exit
-movem_printer_x 
-                cmpi    #1, d3       *check if flag is set for printing memory
-                beq     print_mem
-                movem.l (sp)+, rl_movem_printer
+print_reglist_x movem.l (sp)+, rl_pr_reglist
                 rtr
-*-----------------------------------------------------------
 
 *-----------------------------------------------------------
-* //// Prints data register for MOVEM ONLY!
+* //// print register for movem reglist printing: an or dn
 * parameters:
-*   d5 - counter
-*   d6 - is predecrement? 1 = true ; 0 = false
+*   d6 - reglist loop counter, 0 to 15
+*       0-7 prints 'an', 8-15 prints 'dn'
 * return:
-*   prints to screen
-
-rl_reg_list_printer  reg     a0-a6/d0-d7
-reg_list_printer move.w  sr, -(sp)
-                movem.l rl_reg_list_printer, -(sp)
+*   none
+*
+rl_regl_r       reg     a0-a6/d0-d7
+regl_reg        move.w  sr, -(sp)
+                movem.l rl_regl_r, -(sp)
 * ---- subroutine code:
+                
+                move.b  #6, d0 * print char in d1.b
+                cmpi.b  #7, d6
+                bgt     regl_print_d
+                
+                move.b  #'a', d1
+                bra     regl_r_trap1
+                
+regl_print_d    move.b  #'d', d1
+regl_r_trap1    trap    #15
 
-                move.l  d5, d1      *copy counter to d1 cause Im too lazy to change the code below
-
-                cmpi.b  #1, d6      *if predecrement do 15 - counter
+                move.b  #3, d0 * print signed num in d1.l
                 
-                bne     print_a0_list
-                *for predecrement only:
-                *subtract 15 from d1
-                move.l  #15, d3
-                sub     d1, d3
-                move.l  d3, d1
+                * prints 0-7 for counter values 8-15 too
+                clr.l   d1
+                move.b  d6, d1
+                cmpi.b  #8, d1
+                blt     regl_r_trap2
+                subi.b  #8, d1
                 
-                *For NON predecrement, counter = 0 is A7 and counter = 15 is D0
-                *For PREDECREMENT: We do 15 - counter, so we get: counter = 0 is A7 and counter = 15 = D0
-                
-print_a0_list   cmp     #7, d1        *compare to see if a0
-                bne     print_a1_list   *if not d0 try d1
-                lea     direct_addr_0, a1   *load the message for d0
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
- 
-print_a1_list   cmp     #6, d1    *compare to see if a1
-                bne     print_a2_list        *if not, try next
-                lea     direct_addr_1, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-                
-print_a2_list   cmp     #5, d1    *compare to see if a2
-                bne     print_a3_list       *if not, try next
-                lea     direct_addr_2, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-                
-print_a3_list   cmp     #4, d1    *compare to see if a3
-                bne     print_a4_list       *if not, try next
-                lea     direct_addr_3, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-
-print_a4_list   cmp     #3, d1    *compare to see if a4
-                bne     print_a5_list        *if not, try next
-                lea     direct_addr_4, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-                
-print_a5_list   cmp     #2, d1    *compare to see if a5
-                bne     print_a6_list        *if not, try next
-                lea     direct_addr_5, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-                
-print_a6_list   cmp     #1, d1    *compare to see if a6
-                bne     print_a7_list        *if not, try next
-                lea     direct_addr_6, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen     
-                bra     reg_list_printer_x  *exit the subroutine
-
-print_a7_list   cmp     #0, d1    *compare to see if a7
-                bne     print_d0_list  *if not, try next
-                lea     direct_addr_7, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-
-print_d0_list   cmp     #15, d1   *compare to see if d0
-                bne     print_d1_list        *if not d0 try d1
-                lea     direct_data_0, a1   *load the message for d0
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
- 
-print_d1_list   cmp     #14, d1    *compare to see if d1
-                bne     print_d2_list        *if not, try next
-                lea     direct_data_1, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-                
-print_d2_list   cmp     #13, d1    *compare to see if d2
-                bne     print_d3_list        *if not, try next
-                lea     direct_data_2, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-                
-print_d3_list   cmp     #12, d1    *compare to see if d3
-                bne     print_d4_list        *if not, try next
-                lea     direct_data_3, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-
-print_d4_list   cmp     #11, d1    *compare to see if d4
-                bne     print_d5_list        *if not, try next
-                lea     direct_data_4, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-                
-print_d5_list   cmp     #10, d1    *compare to see if d5
-                bne     print_d6_list        *if not, try next
-                lea     direct_data_5, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen
-                bra     reg_list_printer_x  *exit the subroutine
-                
-print_d6_list   cmp     #9, d1    *compare to see if d6
-                bne     print_d7_list        *if not, try next
-                lea     direct_data_6, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen     
-                bra     reg_list_printer_x  *exit the subroutine
-
-print_d7_list   cmp     #8, d1    *compare to see if d7
-                bne     reg_list_printer_x  *if not, try next
-                lea     direct_data_7, a1   *load the message
-                move.b  #14, d0         *set trap
-                trap    #15             *print to screen                
+regl_r_trap2    trap    #15 * print the remainder in d1.l
                 
 * ---- exit
-reg_list_printer_x 
-                
-                movem.l (sp)+, rl_reg_list_printer
+regl_reg_x      movem.l (sp)+, rl_regl_r
                 rtr
-*-----------------------------------------------------------
 
 *-----------------------------------------------------------
 * //// Prints MOVEQ EA
@@ -1126,6 +987,9 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
+
+
 
 
 
