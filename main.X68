@@ -30,8 +30,8 @@ read_loop       cmpa.l  a6, a0
                 * bge instead of bgt because an extra message is printed
                 * at the bottom every time the limit is reached
                 
-                move.w  a0, d1
-                bsr     print_hex_w
+                move.l  a0, d1
+                bsr     print_hex_l
                 bsr     print_space
                 bsr     read_opcode
                 
@@ -406,6 +406,7 @@ str_buf         dc.l    0
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 

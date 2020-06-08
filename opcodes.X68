@@ -292,7 +292,7 @@ op_notfound     move.w  sr, -(sp)
                 bsr     print_hex_w
                 bsr     print_nl
                 
-                addq.w  #$2, a0 * move to next opcode word
+                addq.l  #$2, a0 * move to next opcode word
                 
 * ---- exit        
 op_notfound_x   movem.l (sp)+, reglist_notf * bring back old registers
@@ -314,7 +314,7 @@ op_nop          move.w  sr, -(sp)
                 lea     msg_nop, a1
                 trap    #15
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_nop_x        movem.l (sp)+, reglist_nop
                 rtr
@@ -363,7 +363,7 @@ op_move         move.w  sr, -(sp)
                 move.b  (ea_move_d), d2
                 bsr     handle_ea
                 
-                addq.w  #$2, a0     * go to next opcode word
+                addq.l  #$2, a0     * go to next opcode word
 * ---- exit                
 op_move_x       movem.l (sp)+, reglist_move
                 rtr
@@ -395,7 +395,7 @@ op_moveq        move.w  sr, -(sp)
                 bsr     moveq_printer
                 bsr     print_nl
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_moveq_x      movem.l (sp)+, reglist_moveq
                 rtr
@@ -444,7 +444,7 @@ movem_skip1     clr.l   d7      *ea printer parameter for ea
                 bsr     movem_printer
                 bsr     print_nl
                 
-                addq    #$4, a0 *add 4 to skip after data word
+                addq.l  #$4, a0 *add 4 to skip after data word
 * ---- exit                
 op_movem_x      movem.l (sp)+, reglist_movem
                 rtr
@@ -495,7 +495,7 @@ op_movea        move.w  sr, -(sp)
                 move.b  (ea_movea_d), d2
                 bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_movea_x      movem.l (sp)+, reglist_movea
                 rtr
@@ -553,7 +553,7 @@ op_add          move.w  sr, -(sp)
                 
 print_add       bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_add_x        movem.l (sp)+, reglist_add
                 rtr
@@ -604,7 +604,7 @@ adda_skip1      move.l  #%1, d5 *set printing destination true
                 move.b  (ea_adda_d), d2
                 bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_adda_x       movem.l (sp)+, reglist_adda
                 rtr
@@ -638,7 +638,7 @@ op_addq         move.w  sr, -(sp)
                 bsr     addq_printer
                 bsr     print_nl
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_addq_x       movem.l (sp)+, reglist_addq
                 rtr
@@ -696,7 +696,7 @@ op_sub          move.w  sr, -(sp)
                 
 print_sub       bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_sub_x        movem.l (sp)+, reglist_sub
                 rtr
@@ -738,7 +738,7 @@ op_lea          move.w  sr, -(sp)
                 move.b  (ea_lea_d), d2
                 bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_lea_x        movem.l (sp)+, reglist_lea
                 rtr
@@ -795,7 +795,7 @@ op_and          move.w  sr, -(sp)
                 
 print_and       bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_and_x        movem.l (sp)+, reglist_and
                 rtr
@@ -851,7 +851,7 @@ op_or           move.w  sr, -(sp)
                 
 print_or        bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_or_x         movem.l (sp)+, reglist_or
                 rtr
@@ -884,7 +884,7 @@ op_not          move.w  sr, -(sp)
                 move.b  (ea_not_s), d3
                 bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_not_x        movem.l (sp)+, reglist_not
                 rtr
@@ -968,7 +968,7 @@ xsd_datareg     bsr     print_size * called with sizes B, W, L
                 * now EA can be printed
 xsd_go_print    bsr     shift_rotate_printer
 * ---- exit                
-op_xsd_x        addq.w  #$2, a0
+op_xsd_x        addq.l  #$2, a0
                 movem.l (sp)+, reglist_xsd
                 rtr
 
@@ -1025,7 +1025,7 @@ rod_datareg     bsr     print_size * called with sizes B, W, L
 rod_go_print    bsr     shift_rotate_printer
                 
 * ---- exit                
-op_rod_x        addq.w  #$2, a0
+op_rod_x        addq.l  #$2, a0
                 movem.l (sp)+, reglist_rod
                 rtr
 
@@ -1055,7 +1055,7 @@ op_bcc          move.w  sr, -(sp)
 bcc_valid       bsr     bcc_printer
                 bsr     print_nl
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_bcc_x        movem.l (sp)+, reglist_bcc
                 rtr
@@ -1083,7 +1083,7 @@ op_jsr          move.w  sr, -(sp)
                 move.b  (ea_jsr_s), d3
                 bsr     handle_ea
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit                
 op_jsr_x        movem.l (sp)+, reglist_jsr
                 rtr
@@ -1104,7 +1104,7 @@ op_rts          move.w  sr, -(sp)
                 lea     msg_rts, a1
                 trap    #15
                 
-                addq.w  #$2, a0
+                addq.l  #$2, a0
 * ---- exit
 op_rts_x        movem.l (sp)+, reglist_rts
                 rtr
@@ -1185,6 +1185,7 @@ ea_rod_d        dc.b    %10111110
 
 * ==== included files ====
                 include "addressing.X68"
+
 
 
 

@@ -140,9 +140,9 @@ print_registers_list
                 
 setup_reg_print
                 move.l  #1, d1      *clear the flag to prevent extra slashes from printing
-                clr     d5          *clear counter
-                addq    #$2, a0     *go to word after opcode
-                clr     d2
+                clr.l   d5          *clear counter
+                addq.l  #$2, a0     *go to word after opcode
+                clr.l   d2
                 move.w  (a0), d2    *save the register list mask into data register  
                 
                 *rotate left 15 times and print if last rotated was 1
@@ -423,11 +423,11 @@ bcc_printer    move.w  sr, -(sp) * save CCR to stack
                 
                 bsr     print_space
                 
-                clr     d7 *holds opcode
-                clr     d6 *holds displacement value
-                clr     d1 *holds final destination address
-                move.w  a0, d1 *add current address
-                addq.w  #2, d1 *add 2
+                clr.l   d7 *holds opcode
+                clr.l   d6 *holds displacement value
+                clr.l   d1 *holds final destination address
+                move.l  a0, d1 * get current address
+                addq.l  #2, d1 * add 2 for PC
                 *to print the EA we have to check if displacement is 0.
                 *if true, we need to print word after as well
                 move.w  (a0), d7
@@ -437,13 +437,13 @@ bcc_printer    move.w  sr, -(sp) * save CCR to stack
 
                 *since displacement is 0 we need additonal word
                 movea.l a0, a1 *save as temp
-                addq    #$2, a1
+                addq.l  #$2, a1
                 move.w  (a1), d6
-                add.w   d6, d1  *add destination address as WORD since we have additional word
+                add.l   d6, d1  * sum is branch destination address
                 bra     bcc_print
                 
 bcc_not_zero
-                add.b   d6, d1 *add destination address as BYTE since no additional word               
+                add.l   d6, d1 * sum is branch destination address            
 bcc_print
                 bsr     print_hex_w *print
                 
@@ -1126,6 +1126,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 
