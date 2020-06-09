@@ -280,6 +280,7 @@ addq_printer_x   		movem.l (sp)+, rl_addq_printer *restore old registers
 * parameters:
 *   a0 - opcode address
 * return:
+*   a0 - address of next opcode, skips the extension word if any
 *   prints the destination of the BCC
 *
 rl_bcc_printer reg     a1-a6/d0-d7 * every reg except parameters/return
@@ -302,10 +303,10 @@ bcc_printer    move.w  sr, -(sp) * save CCR to stack
                 bne     bcc_not_zero   *if NOT 0, go to branch
 
                 *since displacement is 0 we need additonal word
-                movea.l a0, a1 *save as temp
-                addq.l  #$2, a1
-                move.w  (a1), d6
+                addq.l  #$2, a0 * step ahead past extension word 
+                move.w  (a0), d6
                 add.l   d6, d1  * sum is branch destination address
+                
                 bra     bcc_print
                 
 bcc_not_zero
@@ -992,6 +993,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 
