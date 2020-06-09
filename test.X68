@@ -117,7 +117,7 @@ test_start
             
             * group 6
             bgt     *+6
-            ble     $3243
+            ble     $3210
             beq     *-2
             ble     *-32
             beq     *+32
@@ -220,6 +220,7 @@ test_start
             nop
 
 test_end    nop
+
 
 
 

@@ -289,6 +289,9 @@ bcc_printer    move.w  sr, -(sp) * save CCR to stack
 * ---- subroutine code:
                 
                 bsr     print_space
+                move.b  #6, d0 * print char in d1.b
+                move.b  #'$', d1
+                trap    #15
                 
                 clr.l   d7 *holds opcode
                 clr.l   d6 *holds displacement value
@@ -301,19 +304,25 @@ bcc_printer    move.w  sr, -(sp) * save CCR to stack
                 move.b  d7, d6 *get displacement
                 cmpi.b  #%00000000, d6 *check if displacement is 0
                 bne     bcc_not_zero   *if NOT 0, go to branch
-
+                
                 *since displacement is 0 we need additonal word
-                addq.l  #$2, a0 * step ahead past extension word 
+                addq.l  #$2, a0 * step ahead to extension word 
                 move.w  (a0), d6
+                ext.l   d6 * cast signed word to signed long
                 add.l   d6, d1  * sum is branch destination address
                 
                 bra     bcc_print
                 
-bcc_not_zero
-                add.l   d6, d1 * sum is branch destination address            
-bcc_print
-                bsr     print_hex_w *print
+bcc_not_zero    ext.w   d6 * signed byte to signed word
+                ext.l   d6 * signed word to signed long
+                add.l   d6, d1 * sum is branch destination address
                 
+bcc_print       cmpi.l  #$0000FFFF, d1
+                bhi     bcc_print_l * if more than 5 address digits
+                bsr     print_hex_w
+                bra     bcc_printer_x
+                
+bcc_print_l     bsr     print_hex_l * print 8 address digits, not 4
                 
                 
 * ---- exit        
@@ -993,6 +1002,8 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
+
 
 
 
