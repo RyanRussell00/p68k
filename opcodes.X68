@@ -435,6 +435,7 @@ movem_l         moveq   #%10, d4 * MOVEM.L
 movem_dir       clr.b   d5 * do not print destination EA
                 move.w  (a0), d7 * get opword
                 andi    #%111111, d7 * keep bits 0-5
+                movea.l a0, a2 * setup parameter for reglist printing
                 
                 btst.l  #10, d1 * test bit 10 for direction
                 bne     movem_mtr * if %1, it's memory-to-register
@@ -453,9 +454,7 @@ movem_mtr       move.b  (ea_movem_s), d3
                 bsr     handle_ea
                 bsr     print_comma
                 bsr     print_space
-                subq.l  #2, a0 * step back to MOVEM opword
                 bsr     print_reglist
-                addq.l  #2, a0 * step forward again
                 bsr     print_nl
                 
 movem_done      
@@ -1196,6 +1195,7 @@ ea_adda_d       dc.b    %01000000
 ea_lsd_d        dc.b    %10111110
 ea_asd_d        dc.b    %10111110
 ea_rod_d        dc.b    %10111110
+
 
 
 

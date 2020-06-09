@@ -99,7 +99,7 @@ printer_x
 *-----------------------------------------------------------
 * //// print MOVEM register list
 * parameters:
-*   a0 - address of MOVEM instruction
+*   a2 - address of MOVEM instruction
 * return:
 *   none
 *
@@ -108,9 +108,9 @@ print_reglist   move.w  sr, -(sp)
                 movem.l rl_pr_reglist, -(sp)
 * ---- subroutine code:
                 
-                move.w  (a0), d7 * movem opword
-                addq.l  #2, a0 * next word in memory
-                move.w  (a0), d2 * movem reglist
+                move.w  (a2), d7 * movem opword
+                addq.l  #2, a2 * next word in memory
+                move.w  (a2), d2 * movem reglist
                 
                 andi.b  #%111000, d7 * keep EA mode bits
                 cmpi.b  #%100000, d7 * check if mode is -(An)
@@ -993,6 +993,7 @@ dollar_sign    dc.b  '$', 0
 break          dc.b  CR, LF, 0
 comma          dc.b  ',' , 0
 slash          dc.b  '/', 0
+
 
 
 
