@@ -37,7 +37,7 @@ test_start
             move.b      $12345555, d4
             move.b      d3, d4
             move.b      (a4), d3
-            move.b (a1)+, d1
+            move.b      (a1)+, d1
             move.b      -(a3), d5
             move.b      $3321, d6
             move.b      d1, (a3)
@@ -51,7 +51,7 @@ test_start
             move.l      $12345555, d4
             move.l      d3, d4
             move.l      (a4), d3
-            move.l (a1)+, d1
+            move.l      (a1)+, d1
             move.l      -(a3), d5
             move.l      $3321, d6
             move.l      d1, (a3)
@@ -70,7 +70,7 @@ test_start
             move.w      $12345555, d4
             move.w      d3, d4
             move.w      (a4), d3
-            move.w (a1)+, d1
+            move.w      (a1)+, d1
             move.w     -(a3), d5
             move.w      $3321, d6
             move.w      d1, (a3)
@@ -220,6 +220,7 @@ test_start
             nop
 
 test_end    nop
+
 
 
 

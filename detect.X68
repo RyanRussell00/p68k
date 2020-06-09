@@ -233,8 +233,12 @@ read_gr6        move.w  sr, -(sp)
 gr6_skip1:      * Bcc recognition
                 cmpi.w  #%0000000100000000, d7 * check if bits 11-8 are = 0001
                 * if bits 11-8 are 0001, it's not Bcc but actually BSR
-                beq     op_notfound * notice how it's beq, not bne
+                beq     bsr_not_supported
                 bsr     op_bcc
+                bra     read_gr6_x
+                
+bsr_not_supported
+                bsr     op_notfound * notice how it's beq, not bne
                 bra     read_gr6_x
                 
 * ---- exit        
@@ -516,6 +520,7 @@ groups:         jmp     jump_notfound   * group 0 not needed
 * ==== constants and variables ====
 
 msg_group_4     dc.b    'group 4',0
+
 
 
 
