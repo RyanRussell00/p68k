@@ -5,20 +5,18 @@
 * Description: This is a disassrembler written for CSS 422 B.
 *-----------------------------------------------------------
 org_main        equ     $1000
-org_stack       equ     $A000
+org_stack       equ     $F000
                 org     org_main
 start:
                 lea     org_stack, sp * initialize stack
 
 * ==== program code ====
-                clr.l   d4
-                tas     d4
-                bsr     print_logo
+                
+intro           bsr     print_logo
                 bsr     print_nl
-                bsr     bound_hint * for testing only, REMOVE FOR SUBMISSION
+main            bsr     bound_hint * for testing only, REMOVE FOR SUBMISSION
                 bsr     user_input
                 
-* Run main loop
                 * counter for lines printed out
                 clr.l   d2
 
@@ -28,52 +26,28 @@ read_loop       cmpa.l  a6, a0
                 
                 cmpi.l  #screen_limit, d2 * if printed too many lines
                 bge     limit_reached
-                * bge instead of bgt because an extra message is printed
-                * at the bottom every time the limit is reached
                 
                 move.l  a0, d1
                 bsr     print_hex_l
                 bsr     print_space
                 bsr     read_opcode
                 
-                addq.l  #1, d2 * increment counter
-                bra     read_loop * loop again
+                addq.l  #1, d2
+                bra     read_loop
                 
-limit_reached   bsr     wait_user * wait for user to press any key
+limit_reached   bsr     wait_continue * wait for user to press enter
                 clr.l   d2 * reset counter
                 bra     read_loop
                 
-read_loop_x * loop exit
-
+read_loop_x     bsr     wait_again * ask user if they want to go again
+                tst.b   d3 * check if user said yes or no
+                bne     main
+                
+                bsr     print_finish
+                
 program_end     simhalt * code is done
         
 * ==== utility subroutines ====
-
-*-----------------------------------------------------------
-* //// wait for user to press enter
-* parameters:
-*   none
-* return:
-*   none
-*
-rl_wait_user    reg     a0-a6/d0-d7
-wait_user       move.w  sr, -(sp)
-                movem.l rl_wait_user, -(sp)
-* ---- subroutine code:
-                
-                bsr     font_orange
-                move.b  #14, d0 * print null-term string without CR, LF
-                lea     msg_wait, a1
-                trap    #15
-                bsr     font_white
-                
-                move.b  #5, d0 * read character from keyboard
-                trap    #15
-                bsr     print_nl
-                
-* ---- exit
-wait_user_x     movem.l (sp)+, rl_wait_user
-                rtr
 
 *-----------------------------------------------------------
 * //// print newline
@@ -88,7 +62,7 @@ print_nl        move.w  sr, -(sp)
 * ---- subroutine code:
                 
                 move.b  #13, d0 * print null-term string with CR, LF
-                lea     null, a1 * literally point a1 to null (0)
+                lea     nullterm, a1 * literally point a1 to null (0)
                 trap    #15
                 
 * ---- exit
@@ -292,65 +266,6 @@ font_blue       move.w  sr, -(sp)
 font_blue_x     movem.l (sp)+, rl_f_blue
                 rtr
 
-*-----------------------------------------------------------
-* //// print Team 68++ logo
-* parameters:
-*   none
-* return:
-*   none
-*
-rl_print_logo   reg     a0-a6/d0-d7
-print_logo      move.w  sr, -(sp)
-                movem.l rl_print_logo, -(sp)
-* ---- subroutine code:
-                
-                clr.b   d2
-                bsr     font_red * red
-                move.b  #13, d0
-                lea     logo_1, a1
-                trap    #15
-                
-                move.b  #21, d0
-                move.l  #$0000A5FF, d1 * orange
-                trap    #15
-                move.b  #13, d0
-                lea     logo_2, a1
-                trap    #15
-                
-                move.b  #21, d0
-                move.l  #$0000FFFF, d1 * yellow
-                trap    #15
-                move.b  #13, d0
-                lea     logo_3, a1
-                trap    #15
-                
-                move.b  #21, d0
-                move.l  #$0000FF00, d1 * green
-                trap    #15
-                move.b  #13, d0
-                lea     logo_4, a1
-                trap    #15
-                
-                move.b  #21, d0
-                move.l  #$00FF0000, d1 * blue
-                trap    #15
-                move.b  #13, d0
-                lea     logo_5, a1
-                trap    #15
-                
-                move.b  #21, d0
-                move.l  #$00800080, d1 * purple
-                trap    #15
-                move.b  #13, d0
-                lea     logo_6, a1
-                trap    #15
-                
-                bsr     font_white * back to white
-                
-* ---- exit
-print_logo_x    movem.l (sp)+, rl_print_logo
-                rtr
-
 * ==== included files ====
                 include "user.X68"
                 include "detect.X68"
@@ -361,20 +276,12 @@ print_logo_x    movem.l (sp)+, rl_print_logo
 
 screen_limit    equ     31 * lines that can fit on the screen
 
-msg_wait        dc.w    '>>> Press [Enter] to continue... ',0
-
-logo_1          dc.w    '  _______                       __   ___',0
-logo_2          dc.w    ' |__   __|                     / /  / _ \  _     _',0
-logo_3          dc.w    '    | | ___  __ _ _ __ ___    / /_ | (_) || |_ _| |_',0
-logo_4          dc.w    '    | |/ _ \/ _` | `_ ` _ \  | `_ \ > _ <_   _|_   _|',0
-logo_5          dc.w    '    | |  __/ (_| | | | | | | | (_) | (_) ||_|   |_|',0
-logo_6          dc.w    '    |_|\___|\__,_|_| |_| |_|  \___/ \___/ ',0
-
 CR              equ     $0d
 LF              equ     $0a
 HT              equ     $09
+null            equ     $00
 
-null            dc.w    0
+nullterm        dc.w    0
 space           dc.w    ' ',0
 newline         dc.w    CR,LF,0
 indent          dc.w    HT,HT,0
@@ -401,13 +308,14 @@ str_buf         dc.l    0
                 dc.l    0
                 dc.l    0
                 dc.l    0
-
+code_end
 * ==== tests ====
                 include "test.X68"
                 * don't move this any higher than end start
                 * or else the ORGs get screwed up
 * ==== end ====
                 end     start
+
 
 
 
