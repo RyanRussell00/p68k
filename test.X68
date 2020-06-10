@@ -199,27 +199,88 @@ test_start
              ROXR   (a2) *invalid
              ROXL   #2, d5 *invalid
              ROXR   #7, d7 *invalid
-             lsl    (a1)
-             asl    -(a0)
-             asl    (a7)+
-             asr    $1245
-             asl    $12349876
-             lsr    #2, d2
-             lsl    #1, d0
-             asl    #8, d7
-             lsr    #4, d5
+             lsl.w    (a1)
+             asl.w    -(a0)
+             asl.w    (a7)+
+             asr.w    $1245
+             asl      $12349876
+             lsr.l    #2, d2
+             lsl.w    #1, d0
+             asl.w    #8, d7
+             lsr.l    #4, d5
              
-             ror    (a3)
-             ror    (a0)+
-             ror    -(a7)
-             rol    $3333
-             rol    $12346789
-             rol    #1, d0
-             rol    #5, d5
-             rol    #8, d7
+             ror.w    (a3)
+             ror.w    (a0)+
+             ror.w    -(a7)
+             rol.w    $3333
+             rol.w    $12346789
+             rol.w    #1, d0
+             rol.w    #5, d5
+             rol.l    #8, d7
             nop
+            
+            * NOP and similar instructions. Should clearly differentiate NOP and RTS from others.
+
+		NOP			*Required
+		RTS			*Required
+		STOP	#$2000  	* Not required instruction
+
+* This is a group of ADD instructions
+
+add_start	
+            ADDI.W	#$4000,D0	
+		
+* This is a group of SUB instructions
+subtracts	
+            SUBA.W	(A4),A6
+
+* Group is random data
+
+data1		
+            DC.B		$FF,$AA,$45,$0A
+
+* Move instructions
+
+moves		
+            MOVE.B	D0,D1
+    
+data5		
+            DC.B	'Here is some interspersed data'
+		
+* Divide and multiple optional instructions
+	
+ands		AND.B	#$01,$4568
+
+shifts		ASL.B	D0,D0
+
+rolls		ROL.L	D2,D3
+
+clear		CLR	D4
+
+load_addr	LEA	$DC00FF00,A2
+
+* random data	
+		    DC.W	2949,0411,2848,7869
+
+compares	CMP.B	(A3),D5
+
+* Branches	
+		
+
+* Jump and branch instructions
+
+jmplabel	BCC	compares		
+		BGT	compares		
+		BLE	compares	
+		
+*These are not required instructions
+multiply	   
+            MULS	D0,D3
+		    DIVU	(A3),D5	*Optional instruction
+    
 
 test_end    nop
+
 
 
 
