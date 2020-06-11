@@ -29,6 +29,11 @@ test_start
             move.w  #$1234, d0
             move.l  #$12345678, d0
             
+            * Tests for unsupported instructions
+            divu    #2, d0
+            eor.l   d0, d2
+            nbcd    (a0)
+            
             * Tests for unsupported EA modes
             move.w  ($AA, a1), ($BB, a2)
             
@@ -280,6 +285,7 @@ multiply
     
 
 test_end    nop
+
 
 
 

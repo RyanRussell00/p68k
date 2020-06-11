@@ -357,14 +357,14 @@ print_logo      move.w  sr, -(sp)
                 trap    #15
                 
                 move.b  #21, d0
-                move.l  #$00FF0000, d1 * blue
+                move.l  #$00FFFF00, d1 * light blue
                 trap    #15
                 move.b  #13, d0
                 lea     logo_5, a1
                 trap    #15
                 
                 move.b  #21, d0
-                move.l  #$00800080, d1 * purple
+                move.l  #$00D99CB1, d1 * light purple
                 trap    #15
                 move.b  #13, d0
                 lea     logo_6, a1
@@ -413,12 +413,13 @@ msg_finish      dc.w    'Program finished.',0
 msg_hint1       dc.w    '>>> HINT: test bounds are $',0
 msg_hint2       dc.w    ' to $',0
 
-logo_1          dc.w    '  _______                       __   ___',0
-logo_2          dc.w    ' |__   __|                     / /  / _ \  _     _',0
-logo_3          dc.w    '    | | ___  __ _ _ __ ___    / /_ | (_) || |_ _| |_',0
-logo_4          dc.w    '    | |/ _ \/ _` | `_ ` _ \  | `_ \ > _ <_   _|_   _|',0
-logo_5          dc.w    '    | |  __/ (_| | | | | | | | (_) | (_) ||_|   |_|',0
-logo_6          dc.w    '    |_|\___|\__,_|_| |_| |_|  \___/ \___/ ',0
+logo_1          dc.w    '  _______                       __   ___  _____  _____',0
+logo_2          dc.w    ' |__   __|                     / /  / _ \|  __ \|  __ \',0
+logo_3          dc.w    '    | | ___  __ _ _ __ ___    / /_ | (_) | |__) | |__) |',0
+logo_4          dc.w    '    | |/ _ \/ _` | `_ ` _ \  | `_ \ > _ <|  ___/|  ___/',0
+logo_5          dc.w    '    | |  __/ (_| | | | | | | | (_) | (_) | |    | |',0
+logo_6          dc.w    '    |_|\___|\__,_|_| |_| |_|  \___/ \___/|_|    |_|',0
+
 
 
 
