@@ -25,12 +25,26 @@ in_loop1        move.b  #14, d0
                 bsr     read_hex_l
                 
                 tst.b   d6 * if $FF, success
-                bne     in_loop1_end
+                beq     in_loop1_bad
+                
+                bsr     check_even
+                tst.b   d4 * if $FF, even
+                beq     in_loop1_odd
+                
+                bra     in_loop1_end
                 
                 * given string was an invalid start address
-                bsr     font_red
+in_loop1_bad    bsr     font_red
                 move.b  #13, d0
                 lea     msg_input_bad, a1
+                trap    #15
+                bsr     font_blue
+                bra     in_loop1
+                
+                * start address was not even
+in_loop1_odd    bsr     font_red
+                move.b  #13, d0
+                lea     msg_input_odd, a1
                 trap    #15
                 bsr     font_blue
                 bra     in_loop1
@@ -44,6 +58,11 @@ in_loop2        move.b  #14, d0
                 
                 tst.b   d6 * if $FF, success
                 beq     bad_end_addr
+                
+                bsr     check_even
+                tst.b   d4 * if $FF, even
+                beq     in_loop2_odd
+                
                 cmpa.l  d7, a0 * if end < start, it's invalid
                 bls     in_loop2_end
                 
@@ -63,6 +82,14 @@ bad_end_addr    bsr     font_red
                 bsr     font_blue
                 bra     in_loop2
                 
+                * end address was not even
+in_loop2_odd    bsr     font_red
+                move.b  #13, d0
+                lea     msg_input_odd, a1
+                trap    #15
+                bsr     font_blue
+                bra     in_loop2
+                
 in_loop2_end    movea.l d7, a6
                 bsr     font_white
                 
@@ -71,7 +98,7 @@ user_input_x    movem.l (sp)+, rl_user_input
                 rtr
 
 *-----------------------------------------------------------
-* //// read hex long value from user
+* //// read hex long value from user, only even values $0 to $FFFFFE
 * parameters:
 *   none
 * return:
@@ -90,7 +117,7 @@ read_hex_l      move.w  sr, -(sp)
                 lea     str_buf, a1
                 trap    #15
                 
-                cmpi.w  #8, d1 * if more than 8 chars, fail
+                cmpi.w  #6, d1 * if more than 6 chars, fail
                 bgt     read_hex_l_x
                 
                 move.b  (a1), d5 * get first char
@@ -155,6 +182,27 @@ char_to_nib     move.w  sr, -(sp)
                 
 * ---- exit
 char_to_nib_x   movem.l (sp)+, rl_char_to_nib
+                rtr
+
+*-----------------------------------------------------------
+* //// check if long is even or odd
+* parameters:
+*   d7 - long to check
+* return:
+*   d4 - $FF for even, $00 for odd
+*
+rl_check_even   reg     a0-a6/d0-d3/d5-d7
+check_even      move.w  sr, -(sp)
+                movem.l rl_check_even, -(sp)
+* ---- subroutine code:
+                
+                divu    #2, d7
+                swap    d7
+                cmpi.w  #0, d7
+                seq     d4
+                
+* ---- exit
+check_even_x    movem.l (sp)+, rl_check_even
                 rtr
 
 *-----------------------------------------------------------
@@ -352,10 +400,11 @@ print_finish_x  movem.l (sp)+, rl_pr_finish
 
 * ==== constants and variables ====
 
-msg_start_in    dc.w    'Start address (hex, $0-$FFFFFFFF): $',0
-msg_end_in      dc.w    'End address   (hex, $0-$FFFFFFFF): $',0
+msg_start_in    dc.w    'Start address (even hex, $0-$FFFFFE): $',0
+msg_end_in      dc.w    'End address   (even hex, $0-$FFFFFE): $',0
 msg_input_bad   dc.w    'Invalid input, try again.',0
 msg_end_low     dc.w    'End address cannot be less than start address, try again.',0
+msg_input_odd   dc.w    'Address must be even, try again.',0
 
 msg_continue    dc.w    '>>> Press [Enter] to continue... ',0
 msg_again       dc.w    '>>> Disassemble again? [y/n]',0
@@ -370,6 +419,7 @@ logo_3          dc.w    '    | | ___  __ _ _ __ ___    / /_ | (_) || |_ _| |_',0
 logo_4          dc.w    '    | |/ _ \/ _` | `_ ` _ \  | `_ \ > _ <_   _|_   _|',0
 logo_5          dc.w    '    | |  __/ (_| | | | | | | | (_) | (_) ||_|   |_|',0
 logo_6          dc.w    '    |_|\___|\__,_|_| |_| |_|  \___/ \___/ ',0
+
 
 
 
